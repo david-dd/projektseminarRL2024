@@ -53,7 +53,7 @@ tensorboard-data-server==0.6.1
 tensorboard-plugin-wit==1.8.0
 termcolor==1.1.0
 torch==2.2.1
-typing-extensions==4.3.0
+typing-extensions==4.8.0
 urllib3==1.26.7
 Werkzeug==2.0.2
 yaspin==2.1.0
