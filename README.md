@@ -3,7 +3,7 @@
 ## Install requirements (suggested to run in a new virtual environment)
 
 ```shell
-pip install -r requirements.txt
+pip3.10 install -r requirements.txt
 ```
 
 
