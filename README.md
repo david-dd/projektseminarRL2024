@@ -14,6 +14,13 @@ coppy [env_template](./.env_template) and rename it to .env than add your path t
 
 on windows you have to use dubble "\\"
 
+## 
+
+## start project 
+
+```shell
+python3.10 main.py
+```
 
 ## Test FIFO and CR dispatching startegies
 

@@ -138,19 +138,14 @@ def get_lots_to_dispatch_by_lot(instance, current_time, dispatcher):
 
 def run_greedy():
     p = argparse.ArgumentParser()
-    p.add_argument('--dataset', type=str)
-    p.add_argument('--days', type=int)
-    p.add_argument('--dispatcher', type=str)
-    p.add_argument('--seed', type=int)
+    p.add_argument('--dataset', type=str, default='SMT2020_HVLM')
+    p.add_argument('--days', type=int, default=730)
+    p.add_argument('--dispatcher', type=str, default='fifo')
+    p.add_argument('--seed', type=int, default=100)
     p.add_argument('--wandb', action='store_true', default=False)
     p.add_argument('--chart', action='store_true', default=False)
     p.add_argument('--alg', type=str, default='l4m', choices=['l4m', 'm4l'])
     a = p.parse_args()
-
-    a.dataset = 'SMT2020_HVLM'
-    a.days = 730
-    a.dispatcher = 'fifo'
-    a.seed = 100
     
     sys.stderr.write('Loading ' + a.dataset + ' for ' + str(a.days) + ' days, using ' + a.dispatcher + '\n')
     sys.stderr.flush()
