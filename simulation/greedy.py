@@ -1,7 +1,13 @@
 import os
 import sys
-sys.path.append(os.path.join('data','horse','ws','wiro085f-WsRodmann','Final_Version','PySCFabSim', 'simulation'))
 
+from dotenv import load_dotenv
+load_dotenv()
+
+system_path = os.getenv("SYSTEM_PATH")
+
+#sys.path.append(os.path.join('data','horse','ws','wiro085f-WsRodmann','Final_Version','PySCFabSim', 'simulation'))
+sys.path.append(os.path.join(system_path,'simulation'))
 from collections import defaultdict
 from datetime import datetime
 from typing import List
@@ -141,6 +147,10 @@ def run_greedy():
     p.add_argument('--alg', type=str, default='l4m', choices=['l4m', 'm4l'])
     a = p.parse_args()
 
+    a.dataset = 'SMT2020_HVLM'
+    a.days = 730
+    a.dispatcher = 'fifo'
+    a.seed = 100
     
     sys.stderr.write('Loading ' + a.dataset + ' for ' + str(a.days) + ' days, using ' + a.dispatcher + '\n')
     sys.stderr.flush()

@@ -6,8 +6,17 @@ import sys
 import gym
 from gym import Env
 
-sys.path.append(os.path.join(os.path.sep,'data','horse','ws','wiro085f-WsRodmann','RL_Version','PySCFabSim', 'simulation'))
-sys.path.append(os.path.join(os.path.sep,'data','horse','ws','wiro085f-WsRodmann','RL_Version','PySCFabSim', 'simulation', 'gym'))
+from dotenv import load_dotenv
+load_dotenv()
+
+system_path = os.getenv("SYSTEM_PATH")
+
+#sys.path.append(os.path.join(os.path.sep,'data','horse','ws','wiro085f-WsRodmann','RL_Version','PySCFabSim', 'simulation'))
+#sys.path.append(os.path.join(os.path.sep,'data','horse','ws','wiro085f-WsRodmann','RL_Version','PySCFabSim', 'simulation', 'gym'))
+
+sys.path.append(os.path.join(system_path, 'simulation'))
+sys.path.append(os.path.join(system_path, 'simulation', 'gym'))
+
 from classes import Machine, Lot
 from file_instance import FileInstance
 from greedy import get_lots_to_dispatch_by_machine

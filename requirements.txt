@@ -59,3 +59,4 @@ Werkzeug==2.0.2
 yaspin==2.1.0
 zipp==3.8.0
 pyinstrument~=4.6.2
+python-dotenv==1.0.1
