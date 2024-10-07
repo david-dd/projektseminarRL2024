@@ -6,6 +6,19 @@
 pip3.10 install -r requirements.txt
 ```
 
+### optional requirements
+
+Wandb-Plugin:
+```shell
+pip install wandb
+wandb login         # Follow login instructions
+```
+
+Chart-Plugin
+```shell
+pip install chart
+```
+
 ## setup .env file 
 
 coppy [env_template](./.env_template) and rename it to .env than add your path to the repository 
@@ -14,13 +27,28 @@ coppy [env_template](./.env_template) and rename it to .env than add your path t
 
 on windows you have to use dubble "\\"
 
-## 
-
 ## start project 
 
 ```shell
 python3.10 main.py
 ```
+
+### options
+
+defaults for options are alredy set
+
+```shell
+--dataset SMT2020_HVLM  # or SMT2020_LVHM
+--days                  # simulation days
+--dispatcher FIFO/CR/RANDOM
+--seed                  # number: 1/2/3
+--wandb                 # to activate the plugin
+--chart
+--alg
+```
+
+
+
 
 ## Test FIFO and CR dispatching startegies
 
