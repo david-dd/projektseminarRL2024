@@ -6,6 +6,14 @@
 pip3.10 install -r requirements.txt
 ```
 
+## setup .env file 
+
+coppy [env_template](./.env_template) and rename it to .env than add your path to the repository 
+
+(vs code rightclick on empty space in directory -> copy path)
+
+on windows you have to use dubble "\\"
+
 
 ## Test FIFO and CR dispatching startegies
 
