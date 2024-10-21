@@ -17,6 +17,7 @@ from sys import argv
 
 from simulation.gym.sample_envs import DEMO_ENV_1
 
+# function to train the model
 
 def main():
     to_train = 608000  #10000000 # 608000 für 730 Tage --> 32 Jahre Trainingszeit (mit Initialisierungsphase)
