@@ -128,13 +128,13 @@ class DynamicSCFabSimulationEnvironment(Env):
                                 step_start = j.release_at+self.stepbuffer[route][j.name][j.actual_step.order][0]
                                 step_end = j.release_at+self.stepbuffer[route][j.name][j.actual_step.order][1]
                                 if self.instance.current_time <= step_end:
-                                    part_2_1 += 100     # reward for steps that are not finished yet
+                                    part_2_1 += 100     # reward for steps that end within the corect timeframe
                                 if self.instance.current_time <= step_start:
-                                    part_2_1 += 100     # reward for steps that are not started yet
+                                    part_2_1 += 100     # reward for steps that start within the correct timeframe
                                 else:
                                     part_2_1 -= min(50, (self.instance.current_time - step_end) / 3600) # step_end is alway smaler than current_time
-                                                        # penalty depending on how long the step is already finished max penilty is 50
-                                                        # penalty for lots that dont have a next step assigned
+                                                        # penalty depending on how much the correct timeframe is exceeded
+                                                        # penalty for lots that arent in the expected timeframe
                                 part_2_1 = part_2_1*j.priority/10
                             else:
                                 continue
