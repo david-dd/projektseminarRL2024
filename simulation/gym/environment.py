@@ -110,11 +110,11 @@ class DynamicSCFabSimulationEnvironment(Env):
                     for i in range(self.lots_done, len(self.instance.done_lots)): # auf die letzten 30 Tage beschränken 
                         lot = self.instance.done_lots[i]
                         if lot.done_at >= self.instance.current_time - (3600 * 24 * 60):
-                            CT = lot.done_at - lot.release_at           # time it takes for a finished lot to be relesed 
-                            RPT = lot.processing_time                   # time it takes for a lot to be processed
-                            flow_factor =  CT/RPT                       # values the time it takes a lot to leave the system after it is finished copared to proccesing time
+                            CT = lot.done_at - lot.release_at           # time the lot is in the system 
+                            RPT = lot.processing_time                   # time it takes for a lot to be processed (mashine time)
+                            flow_factor =  CT/RPT                       # time the lot is in the system compoared to mashine time
                             part_1 -= (flow_factor-1)*lot.priority      # adds a prioity evaluation to the flow factor
-                                                                        # the faster the lot leaves the system the lower the penalty 
+                                                                        # the less a lot waits the better 
                 #Zeitlicher Puffer für den aktuellen Routenschritt
                 part_2 = 0
                 for j in self.instance.active_lots:
