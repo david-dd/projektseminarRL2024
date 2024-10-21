@@ -90,30 +90,31 @@ class DynamicSCFabSimulationEnvironment(Env):
             else:
                 done = self.next_step() or self.max_steps < self.actual_step
             reward = 0
-            if self.reward_type in [1, 2]:
+            if self.reward_type in [1, 2]:      # determines what reward structure is used 
                 for i in range(self.lots_done, len(self.instance.done_lots)):
                     lot = self.instance.done_lots[i]
-                    reward += 1000
+                    reward += 1000              # reward for all done lots
                     if self.reward_type == 2:
-                        reward += 1000 if lot.deadline_at >= lot.done_at else 0
+                        reward += 1000 if lot.deadline_at >= lot.done_at else 0     # reward for lots done within deadline
                     else:
                         reward += 1000 if lot.deadline_at >= lot.done_at else -min(500, (
-                                lot.done_at - lot.deadline_at) / 3600)
-            elif self.reward_type == 3:
+                                lot.done_at - lot.deadline_at) / 3600)              # penalty for lots done after deadline 
+            elif self.reward_type == 3:         # determines what reward structure is used
                 reward += statistics.mean(
-                    [min(1, j.cr(self.instance.current_time) - 1) for j in self.instance.active_lots])
+                    [min(1, j.cr(self.instance.current_time) - 1) for j in self.instance.active_lots])  # reward if CR is below 1
             # Diplomarbeit: William Rodmann
-            elif self.reward_type == 4:
+            elif self.reward_type == 4:         # determines what reward structure is used
                  #Flow-Faktor
                 part_1 = 0
                 if self.instance.current_time_days >= 100:
                     for i in range(self.lots_done, len(self.instance.done_lots)): # auf die letzten 30 Tage beschränken 
                         lot = self.instance.done_lots[i]
                         if lot.done_at >= self.instance.current_time - (3600 * 24 * 60):
-                            CT = lot.done_at - lot.release_at
-                            RPT = lot.processing_time
-                            flow_factor =  CT/RPT
-                            part_1 -= (flow_factor-1)*lot.priority
+                            CT = lot.done_at - lot.release_at           # time it takes for a finished lot to be relesed 
+                            RPT = lot.processing_time                   # time it takes for a lot to be processed
+                            flow_factor =  CT/RPT                       # values the time it takes a lot to leave the system after it is finished copared to proccesing time
+                            part_1 -= (flow_factor-1)*lot.priority      # adds a prioity evaluation to the flow factor
+                                                                        # the faster the lot leaves the system the lower the penalty 
                 #Zeitlicher Puffer für den aktuellen Routenschritt
                 part_2 = 0
                 for j in self.instance.active_lots:
@@ -127,11 +128,13 @@ class DynamicSCFabSimulationEnvironment(Env):
                                 step_start = j.release_at+self.stepbuffer[route][j.name][j.actual_step.order][0]
                                 step_end = j.release_at+self.stepbuffer[route][j.name][j.actual_step.order][1]
                                 if self.instance.current_time <= step_end:
-                                    part_2_1 += 100
+                                    part_2_1 += 100     # reward for steps that are not finished yet
                                 if self.instance.current_time <= step_start:
-                                    part_2_1 += 100
+                                    part_2_1 += 100     # reward for steps that are not started yet
                                 else:
-                                    part_2_1 -= min(50, (self.instance.current_time - step_end) / 3600)
+                                    part_2_1 -= min(50, (self.instance.current_time - step_end) / 3600) # step_end is alway smaler than current_time
+                                                        # penalty depending on how long the step is already finished max penilty is 50
+                                                        # penalty for lots that dont have a next step assigned
                                 part_2_1 = part_2_1*j.priority/10
                             else:
                                 continue
@@ -144,18 +147,19 @@ class DynamicSCFabSimulationEnvironment(Env):
                         if lot.done_at >= self.instance.current_time - (3600 * 24 * 60):
                             part_3 += 1000 if lot.deadline_at >= lot.done_at else -min(50, (
                                     lot.done_at - lot.deadline_at) / 3600)
+                                                        # reward for finnishing a lot or penalty for finishing a lot after deadline 
                             part_3 = part_2 / lot.priority/10
                 #Warteschlangen der Maschinen
                 part_4 = 0
                 for tool in self.instance.machines:  
                     if tool.group == 'Delay_32':
-                        continue
+                        continue            # no penalty for the Delay_32 machine
                     elif tool.group == 'Diffusion' and len(tool.events) == 0 and len(tool.waiting_lots) >= 6 * 5: #TODO: Woher den Faktor?
-                        part_4 -= 10
+                        part_4 -= 10        # penalty if a lot of lots are waiting in the queue of the Diffusion machine
                     elif len(tool.events) == 0 and len(tool.waiting_lots) >= 6:
-                        part_4-= 10
+                        part_4 -= 10        # penalty if a lot of lots are waiting in the queue of other machines
                 reward = 10*part_1 + 0.01*part_2 + 1*part_3 + 0.1*part_4
-            elif self.reward_type == 5:
+            elif self.reward_type == 5:         # determines what reward structure is used
                 #Flow-Faktor
                 part_1 = 0
                 if self.instance.current_time_days >= 100:
@@ -199,7 +203,7 @@ class DynamicSCFabSimulationEnvironment(Env):
                                     lot.done_at - lot.deadline_at) / 3600)
                             part_3 = part_2 / lot.priority/10
                 reward = 1*part_1 + 0.1*part_2 + 1*part_3
-            elif self.reward_type == 6:
+            elif self.reward_type == 6:         # determines what reward structure is used
                 #Fertigstellung            
                 part_1 = 0
                 if self.instance.current_time_days >= 100:
@@ -233,7 +237,7 @@ class DynamicSCFabSimulationEnvironment(Env):
                                 continue
                             part_2 += part_2_1
                 reward = 1*part_1 + 0.1*part_2
-            elif self.reward_type == 10:
+            elif self.reward_type == 10:        # determines what reward structure is used
                 #Buffer pro Schritt
                 part_1 = 0
                 for j in self.instance.active_lots:
