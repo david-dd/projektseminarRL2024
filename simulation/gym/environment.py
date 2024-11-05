@@ -9,13 +9,21 @@ from gym import Env
 from dotenv import load_dotenv
 load_dotenv()
 
-system_path = os.getenv("SYSTEM_PATH")
+#system_path = os.getenv("SYSTEM_PATH")
 
 #sys.path.append(os.path.join(os.path.sep,'data','horse','ws','wiro085f-WsRodmann','RL_Version','PySCFabSim', 'simulation'))
 #sys.path.append(os.path.join(os.path.sep,'data','horse','ws','wiro085f-WsRodmann','RL_Version','PySCFabSim', 'simulation', 'gym'))
+# ZIH
+sys.path.append(os.path.join(os.path.sep,'projects','p078','p_htw_promentat','smt2020_0','simulation'))
+sys.path.append(os.path.join(os.path.sep,'projects','p078','p_htw_promentat','smt2020_0','simulation', 'gym'))
 
-sys.path.append(os.path.join(system_path, 'simulation'))
-sys.path.append(os.path.join(system_path, 'simulation', 'gym'))
+#Heik lokal
+#sys.path.append(os.path.join('C:/','Users','David Heik','Desktop','Arbeit2024','Studium','Studentenbetreuung','Projektseminar','25-25 - SMT2020','Projekt', 'projektseminarRL2024','simulation'))
+#sys.path.append(os.path.join('C:/','Users','David Heik','Desktop','Arbeit2024','Studium','Studentenbetreuung','Projektseminar','25-25 - SMT2020','Projekt', 'projektseminarRL2024','simulation', 'gym'))
+ 
+
+#sys.path.append(os.path.join(system_path, 'simulation'))
+#sys.path.append(os.path.join(system_path, 'simulation', 'gym')
 
 from classes import Machine, Lot
 from file_instance import FileInstance

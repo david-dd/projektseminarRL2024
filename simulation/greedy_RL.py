@@ -2,6 +2,9 @@ import os
 import sys
 sys.path.append(os.path.join('C:/','Users','willi','OneDrive','Documents','Studium','Diplomarbeit','Programm + Datengrundlage','PySCFabSim-release','simulation'))
 sys.path.append(os.path.join('data','horse','ws','wiro085f-WsRodmann','Final_Version','PySCFabSim', 'simulation'))
+#Heik lokal
+sys.path.append(os.path.join('C:/','Users','David Heik','Desktop','Arbeit2024','Studium','Studentenbetreuung','Projektseminar','25-25 - SMT2020','Projekt', 'projektseminarRL2024','simulation'))
+
 
 from collections import defaultdict
 from datetime import datetime
