@@ -93,6 +93,8 @@ chmod +x start_new_experiment_job.slurm
 
 chmod +x new_experiment_job.sh
 
+sbatch start_new_experiment_job.slurm
+
 chmod g+w /projects/p078/p_htw_promentat/smt2020_4/projektseminarRL2024/experiments
 
 
