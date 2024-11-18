@@ -53,3 +53,61 @@ The reward structure for the agent is defined in the `DynamicSCFabSimulationEnvi
 
 The toolgroup "Implant" refers to a set of machines used in the ion implantation process in semiconductor manufacturing. Ion implantation is a critical step where ions of a dopant material are accelerated and implanted into the silicon wafer to modify its electrical properties. This process is essential for creating regions of different conductivity in the semiconductor material, which are necessary for the functioning of transistors and other semiconductor devices.
 
+
+
+# setup hpc 
+
+# clone the repo 
+
+```shell
+mkdir /projects/p078/p_htw_promentat/smt2020_4
+cd /projects/p078/p_htw_promentat/smt2020_4
+git clone https://github.com/david-dd/projektseminarRL2024.git
+
+```
+
+## copy the Skript runner template
+
+Kopieren sie sich bitte die Vorlagen zum starten der Scripte und zur allokation der Ressourcen in ihr homeverzeichnis:
+ 
+```shell
+cp /projects/p078/p_htw_promentat/start_runner_PySCFabSim_Heik.slurm /home/XX/XXXXXX
+
+cp /projects/p078/p_htw_promentat/runner_PySCFabSim_Heik.sh /home/XX/XXXXXX
+
+chmod +x start_runner_PySCFabSim_Heik.slurm
+
+chmod +x runner_PySCFabSim_Heik.sh
+
+
+
+```
+
+## experiment anlegen 
+```shell
+cp /projects/p078/p_htw_promentat/start_new_experiment_job.slurm /home/XX/XXXXXX
+
+cp /projects/p078/p_htw_promentat/new_experiment_job.sh /home/XX/XXXXXX
+
+chmod +x start_new_experiment_job.slurm
+
+chmod +x new_experiment_job.sh
+
+chmod g+w /projects/p078/p_htw_promentat/smt2020_4/projektseminarRL2024/experiments
+
+
+```
+
+## Starten von Jobs und jobs ausgeben lassen:
+
+```shell
+# starts rl_train_with_env.py
+sbatch start_runner_PySCFabSim_Heik.slurm
+
+# look at active jobs
+squeue --me
+
+# get updates on the job 
+cat slurm-11919465.out
+
+```
