@@ -26,7 +26,7 @@ def save_reward_to_file(reward):
     #    "running_avg": avg
     #} for reward, avg in zip(rewards, running_avg)]
     
-    new_entries = ("rewards: " + str(reward))
+    new_entries = ("rewards: " + str(reward) + "\n")
     
     # Save the updated data to the file in .pkl format
     with open(experiment_path, 'a') as f:
