@@ -4,7 +4,6 @@ import pickle
 
 def save_reward_to_file(rewards):
     # Get environment variables
-    greedy_days_env = int(os.getenv("GREEDY_DAYS"))
     system_path = os.getenv("SYSTEM_PATH")
     experiment_name = os.getenv("EXPERIMENT_NAME")
     
