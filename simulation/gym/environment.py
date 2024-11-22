@@ -6,8 +6,6 @@ import sys
 import gym
 from gym import Env
 
-from save_reward import save_reward_to_file
-
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -47,6 +45,8 @@ from read import read_all
 from sample_envs import DEMO_ENV_1
 import datetime
 import copy
+
+from save_reward import save_reward_to_file
 
 r = Randomizer()
 
