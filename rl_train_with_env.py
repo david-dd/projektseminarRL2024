@@ -71,6 +71,8 @@ def main():
     eval_env = DynamicSCFabSimulationEnvironment(**DEMO_ENV_1, **args_eval, days= 265, seed=777, max_steps=0, reward_type=p['reward'], greedy_instance=greedy_instance,plugins=[])
     print("Alles erstellt - ich lerne jz")
     model = PPO("MlpPolicy", env, verbose=1)
+    
+    
     #Callbacks
     p = os.path.dirname(os.path.realpath(fn))
     checkpoint_callback_MyCallBack = MyCallBack(save_freq=100000, save_path=p, name_prefix='checkpoint_')

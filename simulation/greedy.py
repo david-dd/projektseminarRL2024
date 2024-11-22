@@ -4,15 +4,23 @@ import sys
 from dotenv import load_dotenv
 load_dotenv()
 
-#system_path = os.getenv("SYSTEM_PATH")
-sys.path.append(os.path.join(os.path.sep,'projects','p078','p_htw_promentat','smt2020_0','simulation'))
-#Heik lokal
-sys.path.append(os.path.join('C:/','Users','David Heik','Desktop','Arbeit2024','Studium','Studentenbetreuung','Projektseminar','25-25 - SMT2020','Projekt', 'projektseminarRL2024','simulation'))
+
+system_path = os.getenv("SYSTEM_PATH")
+use_system_path = os.getenv("USE_SYSTEM_PATH")
+
+if use_system_path == 'True':
+    # uses the path in the env file
+    sys.path.append(os.path.join(system_path,'simulation'))
+else:
+    # ZIH
+    sys.path.append(os.path.join(os.path.sep,'projects','p078','p_htw_promentat','smt2020_0','simulation'))
+    #Heik lokal
+    sys.path.append(os.path.join('C:/','Users','David Heik','Desktop','Arbeit2024','Studium','Studentenbetreuung','Projektseminar','25-25 - SMT2020','Projekt', 'projektseminarRL2024','simulation'))
 
 
 
 #sys.path.append(os.path.join('data','horse','ws','wiro085f-WsRodmann','Final_Version','PySCFabSim', 'simulation'))
-#sys.path.append(os.path.join(system_path,'simulation'))
+
 
 from collections import defaultdict
 from datetime import datetime
