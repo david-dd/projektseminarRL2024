@@ -78,7 +78,10 @@ def main():
     model = PPO("MlpPolicy", env, verbose=1)
     
     
-    #Callbacks
+    #Callbacks   
+    
+    # change save_freq=100000 for more snapshots of the model 
+    
     p = os.path.dirname(os.path.realpath(fn))
     checkpoint_callback_MyCallBack = MyCallBack(save_freq=100000, save_path=p, name_prefix='checkpoint_')
     checkpoint_callback_eval = EvalCallback(eval_env, best_model_save_path=p+'/eval/best_model/',log_path=p+'/eval/', eval_freq=2000000, deterministic=True, render=False )
@@ -93,6 +96,9 @@ def main():
     )
     print("Ich sichere")
     model.save(os.path.join(p, 'trained.weights'))
+    
+    
+    
 
 
 if __name__ == '__main__':
