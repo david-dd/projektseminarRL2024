@@ -30,7 +30,7 @@ for seed in [0]:
             for training_period in [training_period_env]:   # set the training period
                 for reward in [reward_env]:          # set the reward fuction to use see gym/environment.py
                     for stngrp in stngrps:
-                        case_name = f'{seed}_ds_{dataset}_a{action_count}_tp{training_period}_reward{reward}_di_{dispatcher}_{str(stngrp)[:2]}'
+                        case_name = f'{seed}_ds_{dataset}_a{action_count}_tp{training_period}_reward{reward}_di_{dispatcher}_{str(stngrp)[1:3]}'
                         d = path.join(root, case_name)
                         mkdir(d)
                         with io.open(path.join(d, 'config.json'), 'w') as f:
