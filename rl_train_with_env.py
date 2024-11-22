@@ -40,6 +40,11 @@ def main():
     class MyCallBack(CheckpointCallback):
 
         def on_step(self) -> bool:
+            
+            # ======================================================
+            # print reward here 
+            # ======================================================
+            
             if self.num_timesteps % 100 == 0:
                 ratio = self.num_timesteps / to_train
                 perc = round(ratio * 100)

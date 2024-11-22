@@ -6,6 +6,8 @@ import sys
 import gym
 from gym import Env
 
+from save_reward import save_reward_to_file
+
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -16,6 +18,9 @@ if use_system_path == 'True':
     # uses the path in the env file
     sys.path.append(os.path.join(system_path, 'simulation'))
     sys.path.append(os.path.join(system_path, 'simulation', 'gym'))
+elif use_system_path == 'C':
+    sys.path.append(os.path.join(os.path.sep,'home','tosc270g','smt2020_4','projektseminarRL2024','simulation'))
+    sys.path.append(os.path.join(os.path.sep,'home','tosc270g','smt2020_4','projektseminarRL2024','simulation', 'gym'))   
 else:
     # ZIH
     sys.path.append(os.path.join(os.path.sep,'projects','p078','p_htw_promentat','smt2020_0','simulation'))
@@ -174,6 +179,11 @@ class DynamicSCFabSimulationEnvironment(Env):
                     elif len(tool.events) == 0 and len(tool.waiting_lots) >= 6:
                         part_4 -= 10        # penalty if a lot of lots are waiting in the queue of other machines
                 reward = 10*part_1 + 0.01*part_2 + 1*part_3 + 0.1*part_4
+                
+                # save the reward for the current step
+                save_reward_to_file(reward)
+                
+                
             elif self.reward_type == 5:         # determines what reward structure is used
                 #Flow-Faktor
                 part_1 = 0

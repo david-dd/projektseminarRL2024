@@ -11,6 +11,8 @@ use_system_path = os.getenv("USE_SYSTEM_PATH")
 if use_system_path == 'True':
     # uses the path in the env file
     sys.path.append(os.path.join(system_path,'simulation'))
+elif use_system_path == 'C':
+    sys.path.append(os.path.join(os.path.sep,'home','tosc270g','smt2020_4','projektseminarRL2024','simulation'))
 else:
     # ZIH
     sys.path.append(os.path.join(os.path.sep,'projects','p078','p_htw_promentat','smt2020_0','simulation'))
