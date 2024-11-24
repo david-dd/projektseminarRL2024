@@ -12,4 +12,5 @@ Test.py
 .json
 *.txt
 experiments/
+*.png
 ```
