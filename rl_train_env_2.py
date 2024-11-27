@@ -21,12 +21,13 @@ from simulation.gym.sample_envs import DEMO_ENV_1
 from dotenv import load_dotenv
 load_dotenv()
 
-
+system_path = os.getenv("SYSTEM_PATH")
+experiment_name = os.getenv("EXPERIMENT_NAME")
 user_number = int(os.getenv("USER_NUMBER"))
 experiment_number = int(os.getenv("EXPERIMENT_NUMBER"))
 greedy_days_env = int(os.getenv("GREEDY_DAYS"))
-system_path = os.getenv("SYSTEM_PATH")
-experiment_name = os.getenv("EXPERIMENT_NAME")
+training_steps = int(os.getenv("TRAINING_STEPS"))
+
 experiment_path = os.path.join(system_path, 'experiments', experiment_name)
 
 import numpy as np
@@ -71,7 +72,7 @@ experiment_subfolder = set_file_name()
 # function to train the model
 
 def main():
-    to_train = 608000  #10000000 # 608000 für 730 Tage --> 32 Jahre Trainingszeit (mit Initialisierungsphase)
+    to_train = training_steps  #10000000 # 608000 für 730 Tage --> 32 Jahre Trainingszeit (mit Initialisierungsphase)
     #greedy_days = 365
     greedy_days = greedy_days_env
     t = time.time()
