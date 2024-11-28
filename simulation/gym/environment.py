@@ -181,7 +181,7 @@ class DynamicSCFabSimulationEnvironment(Env):
                 reward = 10*part_1 + 0.01*part_2 + 1*part_3 + 0.1*part_4
                 
                 # save the reward for the current step
-                save_reward_to_file(reward)
+                # save_reward_to_file(reward)
                 
                 
             elif self.reward_type == 5:         # determines what reward structure is used

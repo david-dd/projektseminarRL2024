@@ -146,7 +146,7 @@ def main():
     #Callbacks
     p = experiment_path
     checkpoint_callback_MyCallBack = MyCallBack(save_freq=100000, save_path=p, name_prefix='checkpoint_')
-    checkpoint_callback_eval = EvalCallback(eval_env, best_model_save_path=p+'/eval/best_model/',log_path=p+'/eval/', eval_freq=2000000, deterministic=True, render=False )
+    checkpoint_callback_eval = EvalCallback(eval_env, best_model_save_path=p+'/' + experiment_subfolder +'/eval/best_model/',log_path=p+'/' + experiment_subfolder +'/eval/', eval_freq=2000000, deterministic=True, render=False )
     callback= [checkpoint_callback_MyCallBack,checkpoint_callback_eval] 
     # model.learn(
     #    total_timesteps=to_train, eval_freq=4000000, eval_env=eval_env, n_eval_episodes=1,
