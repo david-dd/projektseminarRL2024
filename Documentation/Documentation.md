@@ -112,4 +112,8 @@ squeue --me
 # get updates on the job 
 cat slurm-11919465.out
 
+
+# copy folder
+dtcp -r /folder_to_copy /path
+
 ```

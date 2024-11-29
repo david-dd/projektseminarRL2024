@@ -13,4 +13,5 @@ Test.py
 *.txt
 experiments/
 *.png
+dtcp*
 ```
