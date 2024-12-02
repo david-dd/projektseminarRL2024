@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 system_path = os.getenv("SYSTEM_PATH")
-experiment_name = os.getenv("EXPERIMENT_NAME")
+experiment_name = os.getenv("EXPERIMENT_NAME_2")
 experiment_subfolder = os.getenv("EXPERIMENT_SUBFOLDER")
 testing_days_env = int(os.getenv("TESTING_DAYS"))
 
