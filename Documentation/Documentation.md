@@ -100,6 +100,18 @@ chmod g+w /projects/p078/p_htw_promentat/smt2020_4/projektseminarRL2024/experime
 
 ```
 
+## test anlegen 
+
+```shell
+
+chmod +x start_new_test_job.slurm
+
+chmod +x new_test_job.sh
+
+sbatch start_new_test_job.slurm
+
+```
+
 ## Starten von Jobs und jobs ausgeben lassen:
 
 ```shell

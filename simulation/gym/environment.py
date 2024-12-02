@@ -182,7 +182,67 @@ class DynamicSCFabSimulationEnvironment(Env):
                 
                 # save the reward for the current step
                 # save_reward_to_file(reward)
+            
+            # Reward Funktion Claire
+            elif self.reward_type == 14:         # determines what reward structure is used
+                 #Flow-Faktor
+                part_1 = 0
+                if self.instance.current_time_days >= 100:
+                    for i in range(self.lots_done, len(self.instance.done_lots)): # auf die letzten 30 Tage beschränken 
+                        lot = self.instance.done_lots[i]
+                        if lot.done_at >= self.instance.current_time - (3600 * 24 * 60):
+                            CT = lot.done_at - lot.release_at           # time the lot is in the system 
+                            RPT = lot.processing_time                   # time it takes for a lot to be processed (mashine time)
+                            flow_factor =  CT/RPT                       # time the lot is in the system compoared to mashine time
+                            part_1 -= (flow_factor-1)*lot.priority      # adds a prioity evaluation to the flow factor
+                                                                        # the less a lot waits the better 
+                #Zeitlicher Puffer für den aktuellen Routenschritt
+                part_2 = 0
+                for j in self.instance.active_lots:
+                    if j.actual_step.family not in self.station_group:
+                         continue
+                    else:
+                        part_2_1 = 0
+                        for route in self.stepbuffer:
+                            nummer_aus_part = ''.join(filter(str.isdigit, j.part_name))
+                            if nummer_aus_part in route:
+                                step_start = j.release_at+self.stepbuffer[route][j.name][j.actual_step.order][0]
+                                step_end = j.release_at+self.stepbuffer[route][j.name][j.actual_step.order][1]
+                                if self.instance.current_time <= step_end:
+                                    part_2_1 += 100     # reward for steps that end within the corect timeframe
+                                if self.instance.current_time <= step_start:
+                                    part_2_1 += 100     # reward for steps that start within the correct timeframe
+                                else:
+                                    part_2_1 -= min(50, (self.instance.current_time - step_end) / 3600) # step_end is alway smaler than current_time
+                                                        # penalty depending on how much the correct timeframe is exceeded
+                                                        # penalty for lots that arent in the expected timeframe
+                                part_2_1 = part_2_1*j.priority/10
+                            else:
+                                continue
+                            part_2 += part_2_1
+                #Fertigstellung der Lose    
+                part_3 = 0
+                if self.instance.current_time_days >= 100:
+                    for i in range(self.lots_done, len(self.instance.done_lots)):
+                        lot = self.instance.done_lots[i]
+                        if lot.done_at >= self.instance.current_time - (3600 * 24 * 60):
+                            part_3 += 1000 if lot.deadline_at >= lot.done_at else -min(50, (
+                                    lot.done_at - lot.deadline_at) / 3600)
+                                                        # reward for finnishing a lot or penalty for finishing a lot after deadline 
+                            part_3 = part_2 / lot.priority/10
+                #Warteschlangen der Maschinen
+                part_4 = 0
+                for tool in self.instance.machines:  
+                    if tool.group == 'Delay_32':
+                        continue            # no penalty for the Delay_32 machine
+                    elif tool.group == 'Diffusion' and len(tool.events) == 0 and len(tool.waiting_lots) >= 6 * 5: #TODO: Woher den Faktor?
+                        part_4 -= 10        # penalty if a lot of lots are waiting in the queue of the Diffusion machine
+                    elif len(tool.events) == 0 and len(tool.waiting_lots) >= 6:
+                        part_4 -= 10        # penalty if a lot of lots are waiting in the queue of other machines
+                reward = 5*part_1 + 0.01*part_2 + 5*part_3 + 0.1*part_4
                 
+                # save the reward for the current step
+                # save_reward_to_file(reward)
                 
             elif self.reward_type == 5:         # determines what reward structure is used
                 #Flow-Faktor

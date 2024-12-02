@@ -13,6 +13,7 @@ load_dotenv()
 
 system_path = os.getenv("SYSTEM_PATH")
 experiment_name = os.getenv("EXPERIMENT_NAME")
+experiment_subfolder = os.getenv("EXPERIMENT_SUBFOLDER")
 
 
 #sys.path.append(os.path.join('C:/','Users','willi','OneDrive','Documents','Studium','Diplomarbeit','Programm + Datengrundlage','PySCFabSim-release','simulation'))
@@ -44,7 +45,7 @@ def main():
     p.add_argument('--days', type=int)
     a = p.parse_args()
     testing_days = a.days
-    model = PPO.load(os.path.join(arg1, ranag))
+    model = PPO.load(os.path.join(arg1, experiment_subfolder, ranag))
     with io.open(os.path.join(arg1, "config.json"), "r") as f:
         config = json.load(f)['params']
     
@@ -108,7 +109,7 @@ def main():
         chp = checkpoints[current_checkpoint]
         if env.instance.current_time_days > chp:
             print(f'{checkpoints[current_checkpoint]} days')
-            print_statistics(env.instance, chp, config['dataset'], config['dispatcher'], method=f'rl{chp}', dir=arg1)
+            print_statistics(env.instance, chp, config['dataset'], config['dispatcher'], method=f'rl{chp}', dir=os.path.join(arg1, experiment_subfolder))
             print('=================')
             stdout.flush()
             current_checkpoint += 1
