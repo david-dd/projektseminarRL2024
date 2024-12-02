@@ -14,6 +14,7 @@ load_dotenv()
 system_path = os.getenv("SYSTEM_PATH")
 experiment_name = os.getenv("EXPERIMENT_NAME")
 experiment_subfolder = os.getenv("EXPERIMENT_SUBFOLDER")
+testing_days_env = int(os.getenv("TESTING_DAYS"))
 
 
 #sys.path.append(os.path.join('C:/','Users','willi','OneDrive','Documents','Studium','Diplomarbeit','Programm + Datengrundlage','PySCFabSim-release','simulation'))
@@ -44,7 +45,13 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument('--days', type=int)
     a = p.parse_args()
-    testing_days = a.days
+    
+    
+    if a.days is None:
+        testing_days = testing_days_env
+    else:
+        testing_days = a.days
+    
     model = PPO.load(os.path.join(arg1, experiment_subfolder, ranag))
     with io.open(os.path.join(arg1, "config.json"), "r") as f:
         config = json.load(f)['params']
@@ -55,7 +62,7 @@ def main():
     
     plugins = []
     if wandb:
-        from simulation.plugins.wandb_plugin import WandBPlugin
+        from simulation.plugins.wandb_plugin_env import WandBPlugin
         plugins.append(WandBPlugin())
     env = DynamicSCFabSimulationEnvironment(**DEMO_ENV_1, **args, max_steps=1000000000, plugins=plugins, greedy_instance=None)
     obs = env.reset()
