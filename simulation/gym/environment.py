@@ -239,7 +239,7 @@ class DynamicSCFabSimulationEnvironment(Env):
                         part_4 -= 10        # penalty if a lot of lots are waiting in the queue of the Diffusion machine
                     elif len(tool.events) == 0 and len(tool.waiting_lots) >= 6:
                         part_4 -= 10        # penalty if a lot of lots are waiting in the queue of other machines
-                reward = 5*part_1 + 0.01*part_2 + 5*part_3 + 0.1*part_4
+                reward = 1*part_1 + 0.01*part_2 + 10*part_3 + 0.1*part_4
                 
                 # save the reward for the current step
                 # save_reward_to_file(reward)
