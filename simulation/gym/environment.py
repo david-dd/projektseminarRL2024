@@ -63,7 +63,18 @@ STATE_COMPONENTS_DEMO = (
 class DynamicSCFabSimulationEnvironment(Env):
 
     def __init__(self, num_actions, active_station_group, days, dataset, dispatcher, seed, max_steps,
-                 reward_type, action, state_components, greedy_instance,plugins=None, ):
+                 reward_type, action, state_components, greedy_instance,plugins=None, num_agents=1, ):
+        self.num_agents = num_agents
+        
+        self.agent_states = [None] * num_agents  # List to hold states for each agent
+        self.agent_instances = [None] * num_agents
+        self.lots_done_per_agent = [None] * num_agents
+        self.agent_rewards = [0] * num_agents  # Rewards for each agent
+        self.agent_done = [False] * num_agents  # Done flags for each agent
+        self.agent_actions = [None] * num_agents  # Actions for each agent
+        
+        
+        
         self.did_reset = False
         self.files = read_all('datasets/' + dataset)
         self.instance = None
@@ -93,62 +104,90 @@ class DynamicSCFabSimulationEnvironment(Env):
         self.seed_val = seed
         self.reset()
 
-    def step(self, action):
+    def step(self, actions):
         self.did_reset = False
         self.actual_step += 1
-        # apply_priority_rule(self._machine)
-        waiting_lots = self._machine.actions
-        lot_index = action
-        if lot_index < len(waiting_lots) and waiting_lots[lot_index] is not None:
-            lot_group = waiting_lots[lot_index]
-            lot = lot_group[0]
-            lots = lot_group[:min(len(lot_group), lot.actual_step.batch_max)]
-            violated_minruns = self._machine.min_runs_left is not None and self._machine.min_runs_setup == lot.actual_step.setup_needed
-            self.instance.dispatch(self._machine, lots)
-            if self.max_steps == 0:
-                done = self.next_step() or self.instance.current_time > 3600 * 24 * self.days
-            else:
-                done = self.next_step() or self.max_steps < self.actual_step
-            reward = 0
-            if self.reward_type in [1, 2]:      # determines what reward structure is used 
-                for i in range(self.lots_done, len(self.instance.done_lots)):
-                    lot = self.instance.done_lots[i]
-                    reward += 1000              # reward for all done lots
-                    if self.reward_type == 2:
-                        reward += 1000 if lot.deadline_at >= lot.done_at else 0     # reward for lots done within deadline
-                    else:
-                        reward += 1000 if lot.deadline_at >= lot.done_at else -min(500, (
-                                lot.done_at - lot.deadline_at) / 3600)              # penalty for lots done after deadline 
+        
+        rewards = []
+        dones = []
+        infos = []
+        
+        for agent_idx in range(self.num_agents):
             
+            action = actions[agent_idx]
+            
+            # apply_priority_rule(self._machine)
+            waiting_lots = self.agent_instances[agent_idx]._machine.actions
+            lot_index = action
+            if lot_index < len(waiting_lots) and waiting_lots[lot_index] is not None:
+                lot_group = waiting_lots[lot_index]
+                lot = lot_group[0]
+                lots = lot_group[:min(len(lot_group), lot.actual_step.batch_max)]
+                violated_minruns = self._machine.min_runs_left is not None and self._machine.min_runs_setup == lot.actual_step.setup_needed
+                self.agent_instances[agent_idx].dispatch(self.agent_instances[agent_idx]._machine, lots)
+                if self.max_steps == 0:
+                    done = self.next_step() or self.agent_instances[agent_idx].current_time > 3600 * 24 * self.days
+                else:
+                    done = self.next_step() or self.max_steps < self.actual_step
+                reward = 0
+                if self.reward_type in [1, 2]:      # determines what reward structure is used 
+                    for i in range(self.lots_done_per_agent[agent_idx], len(self.agent_instances[agent_idx].done_lots)):
+                        lot = self.agent_instances[agent_idx].done_lots[i]
+                        reward += 1000              # reward for all done lots
+                        if self.reward_type == 2:
+                            reward += 1000 if lot.deadline_at >= lot.done_at else 0     # reward for lots done within deadline
+                        else:
+                            reward += 1000 if lot.deadline_at >= lot.done_at else -min(500, (
+                                    lot.done_at - lot.deadline_at) / 3600)              # penalty for lots done after deadline 
+                
+                else:
+                    pass
+                if violated_minruns:
+                    reward += -10
+                self.lots_done_per_agent[agent_idx] = len(self.agent_instances[agent_idx].done_lots)
+                # Accumulate results
+                rewards.append(reward)
+                dones.append(done)
+                infos.append({})  # Additional information (if any)
+                
+                for plugin in self.plugins:
+                    plugin.on_step_reward(reward)
+                return self.agent_states, rewards, dones, infos
             else:
-                pass
-            if violated_minruns:
-                reward += -10
-            self.lots_done = len(self.instance.done_lots)
-            for plugin in self.plugins:
-                plugin.on_step_reward(reward)
-            return self.state, reward, done, {}
-        else:
-            for plugin in self.plugins:
-                plugin.on_step_reward(-100)
-            return self.state, -100, self.max_steps < self.actual_step, {}
+                for plugin in self.plugins:
+                    plugin.on_step_reward(-100)
+                return self.state, -100, self.max_steps < self.actual_step, {}
 
     def reset(self):
         if not self.did_reset:
             self.did_reset = True
             self.actual_step = 0
-            if self.greedy_instance is not None:
-                self.instance = copy.deepcopy(self.greedy_instance)
-                self.lots_done = len(self.instance.done_lots)
-            else:
-                self.lots_done = 0
-                run_to = 3600 * 24 * self.days
-                self.instance = FileInstance(self.files, run_to, True, self.plugins)
-            Randomizer().random.seed(self.seed_val)
-            self.seed_val += 1
+
+            for agent_idx in range(self.num_agents):
+                if self.greedy_instance is not None:
+                    # Create a copy of the greedy_instance for each agent
+                    agent_instance = copy.deepcopy(self.greedy_instance)
+                    self.lots_done_per_agent.append(len(agent_instance.done_lots))
+                else:
+                    # Create a fresh instance for each agent
+                    self.lots_done_per_agent.append(0)
+                    run_to = 3600 * 24 * self.days
+                    agent_instance = FileInstance(self.files, run_to, True, self.plugins)
+                
+                # Store the instance for the agent
+                self.agent_instances.append(agent_instance)
+
+                # Initialize each agent's state
+                Randomizer().random.seed(self.seed_val + agent_idx)
+                self.agent_states.append(self.state)  # Assuming `state` gives the agent's current state
+
+            self.seed_val += self.num_agents
             self.step_buffer()
-            self.next_step()
-        return self.state
+            self.next_step()  # Assuming this prepares the environment for the first step
+    
+        return self.agent_states  # Return the state of all agents
+
+
     
     def date_time_parse(st):
         return datetime.datetime.strptime(st, '%m/%d/%y %H:%M:%S')
@@ -163,6 +202,7 @@ class DynamicSCFabSimulationEnvironment(Env):
                     count += 1
             process_steps[rk]=count
         return process_steps
+    
     def step_buffer(self):
         process_steps_per_route = self.process_steps_per_route()
         route_keys = [key for key in self.files.keys() if 'route' in key]
@@ -205,102 +245,140 @@ class DynamicSCFabSimulationEnvironment(Env):
                         step_start = step_end + processing_time
 
     def next_step(self):
-        found = False
-        while not found:
-            done = self.instance.next_decision_point()
-            if done or self.instance.current_time > 3600 * 24 * self.days:
-                return True
-            for machine in self.instance.usable_machines:
-                break
-            if self.station_group is None or \
-                    f'[{machine.group}]' in self.station_group or \
-                    f'<{machine.family}>' in self.station_group:
-                found = True
-            else:
-                machine, lots = get_lots_to_dispatch_by_machine(self.instance, machine=machine,
-                                                                ptuple_fcn=self.dispatcher)
-                if lots is None:
-                    self.instance.usable_machines.remove(machine)
+        all_agents_done = True  # Assume all agents are done, and we check if any agent is still active
+        
+        # Iterate through each agent
+        for agent_idx in range(self.num_agents):
+            agent = self.agent_instances[agent_idx]
+            
+            found = False
+            while not found:
+                done = agent.next_decision_point()
+                
+                if done or agent.current_time > 3600 * 24 * self.days:  # Check for termination conditions
+                    self.agent_done[agent_idx] = True  # Mark this agent as done
+                    break  # No need to process further for this agent
                 else:
-                    self.instance.dispatch(machine, lots)
-        self._machine = machine
-        actions = defaultdict(lambda: [])
-        for lot in machine.waiting_lots:
-            actions[lot.actual_step.step_name].append(lot)
-        self.mavg = self.mavg * 0.99 + len(actions) * 0.01
-        if len(actions) > self.num_actions:
-            self._machine.actions = r.random.sample(list(actions.values()), self.num_actions)
-        else:
-            self._machine.actions = list(actions.values())
-            while len(self._machine.actions) < self.num_actions:
-                self._machine.actions.append(None)
-            r.random.shuffle(self._machine.actions)
+                    self.agent_done[agent_idx] = False  # Ensure agent is not marked as done
+
+                for machine in agent.usable_machines:
+                    if self.station_group is None or \
+                            f'[{machine.group}]' in self.station_group or \
+                            f'<{machine.family}>' in self.station_group:
+                        found = True
+                        break  # Proceed if the conditions are met
+                    
+                    # If machine is valid, attempt to dispatch lots
+                    machine, lots = get_lots_to_dispatch_by_machine(agent, machine=machine, ptuple_fcn=self.dispatcher)
+                    if lots is None:
+                        agent.usable_machines.remove(machine)  # Remove machine if no lots available
+                    else:
+                        agent.dispatch(machine, lots)  # Dispatch the lots to the machine
+            
+            # Now after this loop, check if this agent is still not done:
+            if not self.agent_done[agent_idx]:
+                all_agents_done = False  # If any agent is still working, mark as not done
+
+            # Generate actions per machine
+            actions = defaultdict(lambda: [])
+            for machine in agent._machine.waiting_lots:
+                actions[machine.actual_step.step_name].append(machine)
+            
+            # Compute a moving average of actions (if needed)
+            self.mavg = self.mavg * 0.99 + len(actions) * 0.01
+            
+            # Adjust number of actions
+            if len(actions) > self.num_actions:
+                agent._machine.actions = r.random.sample(list(actions.values()), self.num_actions)
+            else:
+                agent._machine.actions = list(actions.values())
+                while len(agent._machine.actions) < self.num_actions:
+                    agent._machine.actions.append(None)
+                r.random.shuffle(agent._machine.actions)
+
         self._state = None
-        return False
+        return all_agents_done  # Return whether all agents are done with their steps
 
     @property
     def state(self):
-        if self._state is None:
-            m: Machine = self._machine
-            t = self.instance.current_time
-            self._state = [
-                m.pms[0].timestamp - t if len(m.pms) > 0 else 999999,  # next maintenance
-                m.utilized_time / m.setuped_time if m.setuped_time > 0 else 0,  # ratio of setup time / processing time
-                (m.setuped_time + m.utilized_time) / t if t > 0 else 0,  # ratio of non idle time
-                m.machine_class,  # type of machine
-            ]
-            from statistics import mean, median
-            for action in self._machine.actions:
-                if action is None:
-                    self._state += [-1000] * len(self.state_components)
-                else:
-                    action: List[Lot]
-                    free_since = [self.instance.current_time - l.free_since for l in action]
-                    work_rem = [len(l.remaining_steps) for l in action]
-                    cr = [l.cr(self.instance.current_time) for l in action]
-                    priority = [l.priority for l in action]
-                    l0 = action[0]
+        # Assuming that the state will be computed for the current agent (each agent has its own state)
+        all_states = []
 
-                    self._machine: Machine
-                    action_type_state_lambdas = {
-                        E.A.L4M.S.OPERATION_TYPE.NO_LOTS: lambda: len(action),
-                        E.A.L4M.S.OPERATION_TYPE.NO_LOTS_PER_BATCH: lambda: len(action) / l0.actual_step.batch_max,
-                        E.A.L4M.S.OPERATION_TYPE.STEPS_LEFT.MEAN: lambda: mean(work_rem),
-                        E.A.L4M.S.OPERATION_TYPE.STEPS_LEFT.MEDIAN: lambda: median(work_rem),
-                        E.A.L4M.S.OPERATION_TYPE.STEPS_LEFT.MAX: lambda: max(work_rem),
-                        E.A.L4M.S.OPERATION_TYPE.STEPS_LEFT.MIN: lambda: min(work_rem),
-                        E.A.L4M.S.OPERATION_TYPE.FREE_SINCE.MEAN: lambda: mean(free_since),
-                        E.A.L4M.S.OPERATION_TYPE.FREE_SINCE.MEDIAN: lambda: median(free_since),
-                        E.A.L4M.S.OPERATION_TYPE.FREE_SINCE.MAX: lambda: max(free_since),
-                        E.A.L4M.S.OPERATION_TYPE.FREE_SINCE.MIN: lambda: min(free_since),
-                        E.A.L4M.S.OPERATION_TYPE.PROCESSING_TIME.AVERAGE: lambda: l0.actual_step.processing_time.avg(),
-                        E.A.L4M.S.OPERATION_TYPE.BATCH.MIN: lambda: l0.actual_step.batch_min,
-                        E.A.L4M.S.OPERATION_TYPE.BATCH.MAX: lambda: l0.actual_step.batch_max,
-                        E.A.L4M.S.OPERATION_TYPE.BATCH.FULLNESS: lambda: min(1, len(action) / l0.actual_step.batch_max),
-                        E.A.L4M.S.OPERATION_TYPE.PRIORITY.MEAN: lambda: mean(priority),
-                        E.A.L4M.S.OPERATION_TYPE.PRIORITY.MEDIAN: lambda: median(priority),
-                        E.A.L4M.S.OPERATION_TYPE.PRIORITY.MAX: lambda: max(priority),
-                        E.A.L4M.S.OPERATION_TYPE.PRIORITY.MIN: lambda: min(priority),
-                        E.A.L4M.S.OPERATION_TYPE.CR.MEAN: lambda: mean(cr),
-                        E.A.L4M.S.OPERATION_TYPE.CR.MEDIAN: lambda: median(cr),
-                        E.A.L4M.S.OPERATION_TYPE.CR.MAX: lambda: max(cr),
-                        E.A.L4M.S.OPERATION_TYPE.CR.MIN: lambda: min(cr),
-                        E.A.L4M.S.OPERATION_TYPE.SETUP.NEEDED: lambda: 0 if l0.actual_step.setup_needed == '' or l0.actual_step.setup_needed == m.current_setup else 1,
-                        E.A.L4M.S.OPERATION_TYPE.SETUP.MIN_RUNS_LEFT: lambda: 0 if self._machine.min_runs_left is None else self._machine.min_runs_left,
-                        E.A.L4M.S.OPERATION_TYPE.SETUP.MIN_RUNS_OK: lambda: 1 if l0.actual_step.setup_needed == '' or l0.actual_step.setup_needed == self._machine.min_runs_setup else 0,
-                        E.A.L4M.S.OPERATION_TYPE.SETUP.LAST_SETUP_TIME: lambda: self._machine.last_setup_time,
-                        E.A.L4M.S.MACHINE.MAINTENANCE.NEXT: lambda: 0,
-                        E.A.L4M.S.MACHINE.IDLE_RATIO: lambda: 1 - (
-                                    self._machine.utilized_time / self.instance.current_time) if self._machine.utilized_time > 0 else 1,
-                        E.A.L4M.S.MACHINE.SETUP_PROCESSING_RATIO: lambda: (
-                                    self._machine.setuped_time / self._machine.utilized_time) if self._machine.utilized_time > 0 else 1,
-                        E.A.L4M.S.MACHINE.MACHINE_CLASS: lambda: 0,
-                    }
-                    self._state += [
-                        action_type_state_lambdas[s]()
-                        for s in self.state_components
-                    ]
-        return self._state
+        # Loop over each agent and calculate their state
+        for agent_idx in range(self.num_agents):
+            agent = self.agent_instances[agent_idx]
+            
+            if agent is None:
+                print(f"Agent at index {agent_idx} is None. Skipping.")
+                continue  # Skip this iteration and move to the next agent.
+            
+            m: Machine = agent._machine  # Use agent-specific machine
+            t = agent.current_time  # Get the current time of the specific agent
+            
+            if self._state is None:  # Check if state is already calculated, if not, calculate it
+                agent_state = [
+                    m.pms[0].timestamp - t if len(m.pms) > 0 else 999999,  # Next maintenance time
+                    m.utilized_time / m.setuped_time if m.setuped_time > 0 else 0,  # Ratio of setup time / processing time
+                    (m.setuped_time + m.utilized_time) / t if t > 0 else 0,  # Ratio of non-idle time
+                    m.machine_class,  # Type of machine
+                ]
+
+                from statistics import mean, median
+                for action in self._machine.actions:
+                    if action is None:
+                        agent_state += [-1000] * len(self.state_components)  # Add placeholder values for None actions
+                    else:
+                        action: List[Lot]
+                        free_since = [agent.current_time - l.free_since for l in action]  # Agent-specific time
+                        work_rem = [len(l.remaining_steps) for l in action]
+                        cr = [l.cr(agent.current_time) for l in action]
+                        priority = [l.priority for l in action]
+                        l0 = action[0]
+
+                        action_type_state_lambdas = {
+                            E.A.L4M.S.OPERATION_TYPE.NO_LOTS: lambda: len(action),
+                            E.A.L4M.S.OPERATION_TYPE.NO_LOTS_PER_BATCH: lambda: len(action) / l0.actual_step.batch_max,
+                            E.A.L4M.S.OPERATION_TYPE.STEPS_LEFT.MEAN: lambda: mean(work_rem),
+                            E.A.L4M.S.OPERATION_TYPE.STEPS_LEFT.MEDIAN: lambda: median(work_rem),
+                            E.A.L4M.S.OPERATION_TYPE.STEPS_LEFT.MAX: lambda: max(work_rem),
+                            E.A.L4M.S.OPERATION_TYPE.STEPS_LEFT.MIN: lambda: min(work_rem),
+                            E.A.L4M.S.OPERATION_TYPE.FREE_SINCE.MEAN: lambda: mean(free_since),
+                            E.A.L4M.S.OPERATION_TYPE.FREE_SINCE.MEDIAN: lambda: median(free_since),
+                            E.A.L4M.S.OPERATION_TYPE.FREE_SINCE.MAX: lambda: max(free_since),
+                            E.A.L4M.S.OPERATION_TYPE.FREE_SINCE.MIN: lambda: min(free_since),
+                            E.A.L4M.S.OPERATION_TYPE.PROCESSING_TIME.AVERAGE: lambda: l0.actual_step.processing_time.avg(),
+                            E.A.L4M.S.OPERATION_TYPE.BATCH.MIN: lambda: l0.actual_step.batch_min,
+                            E.A.L4M.S.OPERATION_TYPE.BATCH.MAX: lambda: l0.actual_step.batch_max,
+                            E.A.L4M.S.OPERATION_TYPE.BATCH.FULLNESS: lambda: min(1, len(action) / l0.actual_step.batch_max),
+                            E.A.L4M.S.OPERATION_TYPE.PRIORITY.MEAN: lambda: mean(priority),
+                            E.A.L4M.S.OPERATION_TYPE.PRIORITY.MEDIAN: lambda: median(priority),
+                            E.A.L4M.S.OPERATION_TYPE.PRIORITY.MAX: lambda: max(priority),
+                            E.A.L4M.S.OPERATION_TYPE.PRIORITY.MIN: lambda: min(priority),
+                            E.A.L4M.S.OPERATION_TYPE.CR.MEAN: lambda: mean(cr),
+                            E.A.L4M.S.OPERATION_TYPE.CR.MEDIAN: lambda: median(cr),
+                            E.A.L4M.S.OPERATION_TYPE.CR.MAX: lambda: max(cr),
+                            E.A.L4M.S.OPERATION_TYPE.CR.MIN: lambda: min(cr),
+                            E.A.L4M.S.OPERATION_TYPE.SETUP.NEEDED: lambda: 0 if l0.actual_step.setup_needed == '' or l0.actual_step.setup_needed == m.current_setup else 1,
+                            E.A.L4M.S.OPERATION_TYPE.SETUP.MIN_RUNS_LEFT: lambda: 0 if self._machine.min_runs_left is None else self._machine.min_runs_left,
+                            E.A.L4M.S.OPERATION_TYPE.SETUP.MIN_RUNS_OK: lambda: 1 if l0.actual_step.setup_needed == '' or l0.actual_step.setup_needed == self._machine.min_runs_setup else 0,
+                            E.A.L4M.S.OPERATION_TYPE.SETUP.LAST_SETUP_TIME: lambda: self._machine.last_setup_time,
+                            E.A.L4M.S.MACHINE.MAINTENANCE.NEXT: lambda: 0,
+                            E.A.L4M.S.MACHINE.IDLE_RATIO: lambda: 1 - (self._machine.utilized_time / agent.current_time) if self._machine.utilized_time > 0 else 1,
+                            E.A.L4M.S.MACHINE.SETUP_PROCESSING_RATIO: lambda: (self._machine.setuped_time / self._machine.utilized_time) if self._machine.utilized_time > 0 else 1,
+                            E.A.L4M.S.MACHINE.MACHINE_CLASS: lambda: 0,
+                        }
+
+                        agent_state += [
+                            action_type_state_lambdas[s]()
+                            for s in self.state_components
+                        ]
+                
+                # Store the computed state for this agent
+                all_states.append(agent_state)
+
+        return all_states  # Return the states for all agents
+
+
 
     def render(self, mode="human"):
         pass
