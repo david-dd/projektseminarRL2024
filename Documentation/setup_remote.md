@@ -168,6 +168,11 @@ show all experiments
 ./show_experiments.sh
 ```
 
+move all slurm files to slurm/
+```shell
+mv slurm* slurm/
+```
+
 copy folders over 100 mb 
 ```shell
 dtcp -r /folder_to_copy /path
