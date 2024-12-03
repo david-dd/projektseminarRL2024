@@ -12,6 +12,8 @@ WANDB_LOG_INTERVAL = 5000
 
 import os
 from dotenv import load_dotenv
+from datetime import datetime
+
 load_dotenv()
 wandb_api_key = os.getenv("WANDB_API_KEY")
 
@@ -23,9 +25,15 @@ def meanor0(li):
 
 
 class WandBPlugin(IPlugin):
+    
+    def __init__(self, project_name: str = None, run_name: str = None):
+        
+        self.project_name = project_name or "projektseminarRL2024"
+        self.run_name = run_name or f"run_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    
     def on_sim_init(self, instance):
         wandb.login(key=wandb_api_key)
-        wandb.init()
+        wandb.init(project=self.project_name, name=self.run_name)
         self.wandb_start = time.time()
         self.wandb_machine_free_count = []
         self.wandb_machine_usable_count = []

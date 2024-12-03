@@ -14,15 +14,12 @@ load_dotenv()
 system_path = os.getenv("SYSTEM_PATH")
 experiment_name = os.getenv("EXPERIMENT_NAME_2")
 experiment_subfolder = os.getenv("EXPERIMENT_SUBFOLDER")
-testing_days_env = int(os.getenv("TESTING_DAYS"))
-
-
-#sys.path.append(os.path.join('C:/','Users','willi','OneDrive','Documents','Studium','Diplomarbeit','Programm + Datengrundlage','PySCFabSim-release','simulation'))
-#sys.path.append(os.path.join('data','horse','ws','wiro085f-WsRodmann','Final_Version','PySCFabSim', 'simulation'))
+testing_days = int(os.getenv("TESTING_DAYS"))
 
 sys.path.append(os.path.join(system_path, 'simulation'))
 
 experiment_path = os.path.join(system_path, 'experiments', experiment_name)
+experiment_subfolder_path = os.path.join(experiment_path, experiment_subfolder)
 
 from simulation.gym.environment import DynamicSCFabSimulationEnvironment
 from simulation.gym.sample_envs import DEMO_ENV_1
@@ -33,27 +30,10 @@ def main():
 
     wandb = True 
     t = datetime.datetime.now()
-    #ranag = 'random' in argv[2]
-    ranag =  "trained.weights"    
+    ranag =  "trained.weights"
     
-    if len(argv) > 1:
-        arg1 = argv[1]
-    else:
-        arg1 = experiment_path
-        #arg1 = "experiments/0_ds_HVLM_a9_tp365_reward2_di_fifo_Di"
-        
-    p = argparse.ArgumentParser()
-    p.add_argument('--days', type=int)
-    a = p.parse_args()
-    
-    
-    if a.days is None:
-        testing_days = testing_days_env
-    else:
-        testing_days = a.days
-    
-    model = PPO.load(os.path.join(arg1, experiment_subfolder, ranag))
-    with io.open(os.path.join(arg1, "config.json"), "r") as f:
+    model = PPO.load(os.path.join(experiment_subfolder_path, ranag))
+    with io.open(os.path.join(experiment_path, "config.json"), "r") as f:
         config = json.load(f)['params']
     
     args = dict(seed=0, num_actions=config['action_count'], active_station_group=config['station_group'], days=testing_days,
@@ -63,10 +43,11 @@ def main():
     plugins = []
     if wandb:
         from simulation.plugins.wandb_plugin_env import WandBPlugin
-        plugins.append(WandBPlugin())
+        run_name = experiment_subfolder
+        project_name= "projektseminarRL2024"
+        plugins.append(WandBPlugin(project_name=project_name, run_name=run_name))
     env = DynamicSCFabSimulationEnvironment(**DEMO_ENV_1, **args, max_steps=1000000000, plugins=plugins, greedy_instance=None)
     obs = env.reset()
-    #print("obs", obs)
     reward = 0
 
     checkpoints = [ 365, testing_days]
@@ -98,8 +79,7 @@ def main():
         #         #print("sortable", sortable)
         #         action = sortable[0][1]
         # #         print("action",action)
-        obs, r, done, info = env.step(action)
-       # print("obs", obs)   
+        obs, r, done, info = env.step(action)  
         if r < 0:
             deterministic = False
         else:
@@ -116,7 +96,7 @@ def main():
         chp = checkpoints[current_checkpoint]
         if env.instance.current_time_days > chp:
             print(f'{checkpoints[current_checkpoint]} days')
-            print_statistics(env.instance, chp, config['dataset'], config['dispatcher'], method=f'rl{chp}', dir=os.path.join(arg1, experiment_subfolder))
+            print_statistics(env.instance, chp, config['dataset'], config['dispatcher'], method=f'rl{chp}', dir=experiment_subfolder_path)
             print('=================')
             stdout.flush()
             current_checkpoint += 1

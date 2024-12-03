@@ -7,4 +7,4 @@
 #SBATCH -c 4
 #SBATCH -A "p_htw_promentat"
 unset XDG_RUNTIME_DIR
-srun ./runner_PySCFabSim_Heik.sh
+srun ./new_run_job.sh

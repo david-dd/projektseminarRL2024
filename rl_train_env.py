@@ -25,7 +25,7 @@ system_path = os.getenv("SYSTEM_PATH")
 experiment_name = os.getenv("EXPERIMENT_NAME")
 user_number = int(os.getenv("USER_NUMBER"))
 experiment_number = int(os.getenv("EXPERIMENT_NUMBER"))
-greedy_days_env = int(os.getenv("GREEDY_DAYS"))
+greedy_days = int(os.getenv("GREEDY_DAYS"))
 training_steps = int(os.getenv("TRAINING_STEPS"))
 
 experiment_path = os.path.join(system_path, 'experiments', experiment_name)
@@ -46,42 +46,39 @@ def set_file_name():
     file_path = os.path.join(experiment_path, 'config.json')
     station_group = get_station_group(file_path)
     
-    experiment_subfolder = str(station_group) + '_' + str(user_number) + '_' + str(experiment_number) + '_' + datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S_%f") + '_' + str(random.randint(10000,99999))
+    experiment_subfolder = str(station_group)[1:-1] + '_' + str(user_number) + '_' + str(experiment_number) + '_' + datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S_%f") + '_' + str(random.randint(10000,99999))
     
-    path = os.path.join(experiment_path, experiment_subfolder)
-    if not os.path.exists(path):
-        os.mkdir(path)
+    experiment_subfolder_path = os.path.join(experiment_path, experiment_subfolder)
+    if not os.path.exists(experiment_subfolder_path):
+        os.mkdir(experiment_subfolder_path)
         
-    print(f"Experiment-Ordner erstellt: '{path}'")
+    print(f"\n==========================\nExperiment-Ordner erstellt:\n{experiment_subfolder_path}\n==========================\n")
     
-    return experiment_subfolder
+    return experiment_subfolder, experiment_subfolder_path
 
 def calculate_moving_average(data, window_size=100):
     return np.convolve(data, np.ones(window_size)/window_size, mode='valid')
 
 # Am Ende des Trainings Rewards-Liste speichern
 def save_rewards_list():
-    file_destination = os.path.join(experiment_path, experiment_subfolder, 'rewards_list.pkl')
+    file_destination = os.path.join(experiment_subfolder_path, 'rewards_list.pkl')
     with open(file_destination, 'wb') as f:
         pickle.dump(rewards_list, f)
     print(f"Rewards-Liste gespeichert als '{file_destination}'")
 
 
-experiment_subfolder = set_file_name()
+experiment_subfolder, experiment_subfolder_path = set_file_name()
 
 # function to train the model
 
 def main():
-    to_train = training_steps  #10000000 # 608000 für 730 Tage --> 32 Jahre Trainingszeit (mit Initialisierungsphase)
-    #greedy_days = 365
-    greedy_days = greedy_days_env
+    
     t = time.time()
     save_freq = 500 
     class MyCallBack(CheckpointCallback):
 
         def on_step(self) -> bool:
-            # Globale Liste zum Speichern der Rewards
-            
+            # Globale Liste zum Speichern der Rewards            
 
             # Aktuellen Reward sammeln (falls vorhanden)
             if 'rewards' in self.locals:
@@ -94,10 +91,10 @@ def main():
             # ======================================================
             # print reward here 
             if self.num_timesteps % 10000 == 0 and len(rewards_list) > 0:
-                img_path = os.path.join(experiment_path, experiment_subfolder, f'rewards_plot_step.png')
+                img_path = os.path.join(experiment_subfolder_path, f'rewards_plot_{experiment_subfolder}.png')
                 plt.figure(figsize=(10, 5))
-                moving_avg = calculate_moving_average(rewards_list, window_size=500)
-                plt.plot(moving_avg, label='Moving Average (window=500)')
+                moving_avg = calculate_moving_average(rewards_list, window_size=10000)
+                plt.plot(moving_avg, label='Moving Average (window=10000)')
                 plt.title('Reward Progress')
                 plt.xlabel('Steps')
                 plt.ylabel('Reward')
@@ -110,21 +107,19 @@ def main():
             
             #Fortschritt ausgeben
             if self.num_timesteps % 100 == 0:
-                ratio = self.num_timesteps / to_train
+                ratio = self.num_timesteps / training_steps
                 perc = round(ratio * 100)
                 remaining = (time.time() - t) / ratio * (1 - ratio) if ratio > 0 else 9999999999999
                 remaining /= 3600
 
-                sys.stderr.write(f'\r{self.num_timesteps} / {to_train} {perc}% {round(remaining, 2)} hours left    {env.instance.current_time_days}      ')
+                sys.stderr.write(f'\r{self.num_timesteps} / {training_steps} {perc}% {round(remaining, 2)} hours left    {env.instance.current_time_days}      ')
             return super().on_step()
 
     
     if len(argv) > 1:
         fn = argv[1]
     else:
-        #fn = experiment_path
         fn = os.path.join(experiment_path, 'config.json')
-        #fn = "experiments/0_ds_HVLM_a9_tp730_reward2_di_fifo_TF\config.json"
     with open(fn, 'r') as config:
         p = json.load(config)['params']
     args = dict(num_actions=p['action_count'], active_station_group=p['station_group'],
@@ -144,25 +139,29 @@ def main():
     
     
     #Callbacks
-    p = experiment_path
-    checkpoint_callback_MyCallBack = MyCallBack(save_freq=100000, save_path=p+'/' + experiment_subfolder, name_prefix='checkpoint_')
-    checkpoint_callback_eval = EvalCallback(eval_env, best_model_save_path=p+'/' + experiment_subfolder +'/eval/best_model/',log_path=p+'/' + experiment_subfolder +'/eval/', eval_freq=2000000, deterministic=True, render=False )
+    checkpoint_callback_MyCallBack = MyCallBack(save_freq=100000, save_path=experiment_subfolder_path + '/checkpoint', name_prefix='checkpoint_')
+    checkpoint_callback_eval = EvalCallback(eval_env, best_model_save_path=experiment_subfolder_path +'/eval/best_model/',log_path=experiment_subfolder_path +'/eval/', eval_freq=2000000, deterministic=True, render=False )
     callback= [checkpoint_callback_MyCallBack,checkpoint_callback_eval] 
     # model.learn(
-    #    total_timesteps=to_train, eval_freq=4000000, eval_env=eval_env, n_eval_episodes=1,
+    #    total_timesteps=training_steps, eval_freq=4000000, eval_env=eval_env, n_eval_episodes=1,
     #    callback=checkpoint_callback
     # )
     model.learn(
-        total_timesteps=to_train,
+        total_timesteps=training_steps,
         callback=callback,
     )
     print("Ich sichere")
-    model.save(os.path.join(p, experiment_subfolder, 'trained.weights'))
-
-    
+    model.save(os.path.join(experiment_subfolder_path, 'trained.weights'))    
     
     # Rewards-Liste speichern
     save_rewards_list()
+    
+    print("=========================================")
+    print("Experiment name: " + experiment_name )
+    print("Experiment subfolder: " + experiment_subfolder)
+    print("Total time taken: " + t)
+    print("=========================================")
+    
 
 
 if __name__ == '__main__':
