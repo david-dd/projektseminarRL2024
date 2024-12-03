@@ -241,8 +241,50 @@ class DynamicSCFabSimulationEnvironment(Env):
                         part_4 -= 10        # penalty if a lot of lots are waiting in the queue of other machines
                 reward = 1*part_1 + 0.01*part_2 + 10*part_3 + 0.1*part_4
                 
-                # save the reward for the current step
-                # save_reward_to_file(reward)
+            elif self.reward_type == 141:         # determines what reward structure is used
+                lots_done = 0
+                for i in range(self.lots_done, len(self.instance.done_lots)):
+                    lot = self.instance.done_lots[i]
+                    lots_done += 1000              # reward for all done lots                  
+                    lots_done += 1000 if lot.deadline_at >= lot.done_at else -min(200, (
+                            lot.done_at - lot.deadline_at) / 3600)              # penalty for lots done after deadline 
+                
+                #Flow-Faktor
+                flow_factor_reward = 0
+                if self.instance.current_time_days >= 100:
+                    for i in range(self.lots_done, len(self.instance.done_lots)): # auf die letzten 30 Tage beschränken 
+                        lot = self.instance.done_lots[i]
+                        if lot.done_at >= self.instance.current_time - (3600 * 24 * 60):
+                            CT = lot.done_at - lot.release_at           # time the lot is in the system 
+                            RPT = lot.processing_time                   # time it takes for a lot to be processed (mashine time)
+                            flow_factor =  CT/RPT                       # time the lot is in the system compoared to mashine time
+                            flow_factor_reward -= (flow_factor-1)*lot.priority      # adds a prioity evaluation to the flow factor
+                                                                        # the less a lot waits the better 
+                #Zeitlicher Puffer für den aktuellen Routenschritt
+                part_2 = 0
+                for j in self.instance.active_lots:
+                    if j.actual_step.family not in self.station_group:
+                         continue
+                    else:
+                        part_2_1 = 0
+                        for route in self.stepbuffer:
+                            nummer_aus_part = ''.join(filter(str.isdigit, j.part_name))
+                            if nummer_aus_part in route:
+                                step_start = j.release_at+self.stepbuffer[route][j.name][j.actual_step.order][0]
+                                step_end = j.release_at+self.stepbuffer[route][j.name][j.actual_step.order][1]
+                                if self.instance.current_time <= step_end:
+                                    part_2_1 += 100     # reward for steps that end within the corect timeframe
+                                if self.instance.current_time <= step_start:
+                                    part_2_1 += 100     # reward for steps that start within the correct timeframe
+                                else:
+                                    part_2_1 -= min(50, (self.instance.current_time - step_end) / 3600) # step_end is alway smaler than current_time
+                                                        # penalty depending on how much the correct timeframe is exceeded
+                                                        # penalty for lots that arent in the expected timeframe
+                                part_2_1 = part_2_1*j.priority/10
+                            else:
+                                continue
+                            part_2 += part_2_1
+                reward = 10*lots_done + 3*flow_factor_reward + 1*part_2
                 
             elif self.reward_type == 5:         # determines what reward structure is used
                 #Flow-Faktor

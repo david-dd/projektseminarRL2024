@@ -14,7 +14,7 @@ for file in slurm*; do
         echo "-----------------------------------------------------"
         echo
         # Use tail to print the last 10 lines of the file
-        tail -n 15 "$file"
+        tail -n 22 "$file"
         echo
         echo
     fi
