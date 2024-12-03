@@ -29,7 +29,7 @@ user_number = int(os.getenv("USER_NUMBER"))
 experiment_number = int(os.getenv("EXPERIMENT_NUMBER"))
 greedy_days = int(os.getenv("GREEDY_DAYS"))
 training_steps = int(os.getenv("TRAINING_STEPS"))
-evaluate_after_train = int(os.getenv("EVALUATE_AFTER_TRAIN"))
+evaluate_after_train = os.getenv("EVALUATE_AFTER_TRAIN")
 
 
 experiment_path = os.path.join(system_path, 'experiments', experiment_name)
