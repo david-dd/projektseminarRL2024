@@ -17,6 +17,8 @@ from sys import argv
 
 from simulation.gym.sample_envs import DEMO_ENV_1
 
+from rl_test_env import run
+
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -27,6 +29,8 @@ user_number = int(os.getenv("USER_NUMBER"))
 experiment_number = int(os.getenv("EXPERIMENT_NUMBER"))
 greedy_days = int(os.getenv("GREEDY_DAYS"))
 training_steps = int(os.getenv("TRAINING_STEPS"))
+evaluate_after_train = int(os.getenv("EVALUATE_AFTER_TRAIN"))
+
 
 experiment_path = os.path.join(system_path, 'experiments', experiment_name)
 
@@ -161,6 +165,11 @@ def main():
     print("Experiment subfolder: " + experiment_subfolder)
     print("Total time taken: " + t)
     print("=========================================")
+    
+    if (evaluate_after_train == "True"):
+        print("\nstart evaluation")
+        print("=========================================")
+        run(experiment_name, experiment_subfolder)
     
 
 

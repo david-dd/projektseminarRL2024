@@ -9,17 +9,6 @@ import argparse
 from stable_baselines3 import PPO
 
 from dotenv import load_dotenv
-load_dotenv()
-
-system_path = os.getenv("SYSTEM_PATH")
-experiment_name = os.getenv("EXPERIMENT_NAME_2")
-experiment_subfolder = os.getenv("EXPERIMENT_SUBFOLDER")
-testing_days = int(os.getenv("TESTING_DAYS"))
-
-sys.path.append(os.path.join(system_path, 'simulation'))
-
-experiment_path = os.path.join(system_path, 'experiments', experiment_name)
-experiment_subfolder_path = os.path.join(experiment_path, experiment_subfolder)
 
 from simulation.gym.environment import DynamicSCFabSimulationEnvironment
 from simulation.gym.sample_envs import DEMO_ENV_1
@@ -27,7 +16,25 @@ from simulation.stats import print_statistics
 
 
 def main():
+    experiment_name = os.getenv("EXPERIMENT_NAME_2")
+    experiment_subfolder = os.getenv("EXPERIMENT_SUBFOLDER")    
+    
+    run( experiment_name, experiment_subfolder)
+    
 
+
+def run( experiment_name, experiment_subfolder):
+
+    load_dotenv()
+
+    system_path = os.getenv("SYSTEM_PATH")
+    testing_days = int(os.getenv("TESTING_DAYS"))
+    
+    sys.path.append(os.path.join(system_path, 'simulation'))
+    
+    experiment_path = os.path.join(system_path, 'experiments', experiment_name)
+    experiment_subfolder_path = os.path.join(experiment_path, experiment_subfolder)
+    
     wandb = True 
     t = datetime.datetime.now()
     ranag =  "trained.weights"
