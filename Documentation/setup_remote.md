@@ -163,6 +163,11 @@ display all slurm files
 ./display_slurm.sh
 ```
 
+show all experiments
+```shell
+./show_experiments.sh
+```
+
 copy folders over 100 mb 
 ```shell
 dtcp -r /folder_to_copy /path
