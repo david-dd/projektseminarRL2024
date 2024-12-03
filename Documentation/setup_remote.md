@@ -70,7 +70,18 @@ now the experiments folder sould have been created with a new experiemnt
 the `config.json` file should look something like this 
 
 ```shell
-
+{
+  "name": "TF_BE_40_0_ds_HVLM_a9_tp630_reward4_fifo",
+  "params": {
+    "seed": 0,
+    "dataset": "HVLM",
+    "action_count": 9,
+    "training_period": 630,
+    "dispatcher": "fifo",
+    "reward": 4,
+    "station_group": "<TF_BE_40>"
+  }
+}
 ```
 
 ### Train a new Agent 
