@@ -158,6 +158,11 @@ get updates on the job
 cat slurm-11919465.out
 ```
 
+display all slurm files 
+```shell
+./display_slurm.sh
+```
+
 copy folders over 100 mb 
 ```shell
 dtcp -r /folder_to_copy /path

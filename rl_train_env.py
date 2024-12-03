@@ -163,7 +163,7 @@ def main():
     print("=========================================")
     print("Experiment name: " + experiment_name )
     print("Experiment subfolder: " + experiment_subfolder)
-    print("Total time taken: " + t)
+    print("Total time taken: " + str(t))
     print("=========================================")
     
     if (evaluate_after_train == "True"):
