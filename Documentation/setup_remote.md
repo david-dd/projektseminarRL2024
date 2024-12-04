@@ -145,6 +145,15 @@ sbatch start_new_test_job.slurm
 
 you can then view your results in wandb
 
+### run greedy
+
+
+
+```shell
+cd $ZIH_USER_DIR/projects/job_runner/
+
+sbatch start_new_greedy_job.slurm
+```
 
 ### ZIH Comands 
 

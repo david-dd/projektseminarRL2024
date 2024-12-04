@@ -2,6 +2,22 @@ import statistics
 import time
 from collections import defaultdict
 from typing import List
+import os
+import sys
+
+from dotenv import load_dotenv
+from datetime import datetime
+
+load_dotenv()
+wandb_api_key = os.getenv("WANDB_API_KEY")
+system_path = os.getenv("SYSTEM_PATH")
+
+if system_path:
+    print(system_path)
+    sys.path.append(os.path.join(system_path, 'simulation'))
+    print(f"sys.path: {sys.path}")
+else:
+    raise EnvironmentError("SYSTEM_PATH environment variable is not set.")
 
 from simulation.classes import Machine, Lot
 from simulation.plugins.interface import IPlugin
@@ -10,12 +26,7 @@ import wandb
 
 WANDB_LOG_INTERVAL = 5000
 
-import os
-from dotenv import load_dotenv
-from datetime import datetime
 
-load_dotenv()
-wandb_api_key = os.getenv("WANDB_API_KEY")
 
 def meanor0(li):
     if len(li) > 0:

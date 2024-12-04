@@ -86,6 +86,9 @@ class DynamicSCFabSimulationEnvironment(Env):
         self.stepbuffer={}  
         self.greedy_instance = copy.deepcopy(greedy_instance)
         self.reset()
+        
+        
+        self.previous_setup = ''
 
     def seed(self, seed=None):
         if seed is None:
@@ -235,10 +238,11 @@ class DynamicSCFabSimulationEnvironment(Env):
                 for tool in self.instance.machines:  
                     if tool.group == 'Delay_32':
                         continue            # no penalty for the Delay_32 machine
-                    elif tool.group == 'Diffusion' and len(tool.events) == 0 and len(tool.waiting_lots) >= 6 * 5: #TODO: Woher den Faktor?
+                    elif tool.group == 'Implant' and len(tool.events) == 0 and len(tool.waiting_lots) >= 6 * 5: #TODO: Woher den Faktor?
                         part_4 -= 10        # penalty if a lot of lots are waiting in the queue of the Diffusion machine
-                    elif len(tool.events) == 0 and len(tool.waiting_lots) >= 6:
-                        part_4 -= 10        # penalty if a lot of lots are waiting in the queue of other machines
+                    
+                    # removed penelty for other delays 
+                    
                 reward = 1*part_1 + 0.01*part_2 + 10*part_3 + 0.1*part_4
                 
             elif self.reward_type == 141:         # determines what reward structure is used
@@ -285,6 +289,31 @@ class DynamicSCFabSimulationEnvironment(Env):
                                 continue
                             part_2 += part_2_1
                 reward = 10*lots_done + 3*flow_factor_reward + 1*part_2
+                
+            elif self.reward_type == 142:         # determines what reward structure is used
+                lots_done = 0
+                for i in range(self.lots_done, len(self.instance.done_lots)):
+                    lot = self.instance.done_lots[i]
+                    lots_done += 1000              # reward for all done lots                  
+                    lots_done += 1000 if lot.deadline_at >= lot.done_at else -min(200, (
+                            lot.done_at - lot.deadline_at) / 3600)              # penalty for lots done after deadline 
+                
+                # removed flow factor to keep setup time in mind 
+                
+                setup_reward = 0
+                for tool in self.instance.machines:
+                    if tool.group in self.station_group:
+                        if tool.current_setup != self.previous_setup:
+                            self.previous_setup = tool.current_setup
+                            setup_reward -= 100            
+                            
+                que_reward = 0
+                for tool in self.instance.machines:  
+                    if tool.group == 'Implant' and len(tool.events) == 0 and len(tool.waiting_lots) >= 6 * 5: #TODO: Woher den Faktor?
+                        que_reward -= 10        # penalty if a lot of lots are waiting in the queue of the Implant machine
+                    
+                    # removed penelty for other delays 
+                reward = 10*lots_done + 1*que_reward + 5*setup_reward
                 
             elif self.reward_type == 5:         # determines what reward structure is used
                 #Flow-Faktor
