@@ -201,7 +201,10 @@ def run_greedy():
     instance.finalize()
     interval = datetime.now() - start_time
     print(instance.current_time_days, ' days simulated in ', interval)
-    print_statistics(instance, a.days, a.dataset, a.dispatcher, method='greedy_seed' + str(a.seed))
+    try:      
+        print_statistics(instance, a.days, a.dataset, a.dispatcher, method='greedy_seed' + str(a.seed))
+    except Exception as e:
+        print('Error in print_statistics', e)
     
     
 if __name__ == '__main__':

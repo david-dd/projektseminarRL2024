@@ -179,7 +179,7 @@ show all experiments
 
 move all slurm files to slurm/
 ```shell
-mv slurm* slurm/
+mv slurm-* slurm/
 ```
 
 copy folders over 100 mb 

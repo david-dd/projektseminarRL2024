@@ -44,11 +44,13 @@ rewards_list = []
 def get_station_group(file_path):
     with open(file_path, 'r') as file:
         data = json.load(file)
-        return data['params']['station_group']
+        station_group = data['params']['station_group']
+        reward_config = data['params']['reward']
+        return station_group, reward_config
 
 def set_file_name():    
     file_path = os.path.join(experiment_path, 'config.json')
-    station_group = get_station_group(file_path)
+    station_group, reward_config = get_station_group(file_path)
     
     experiment_subfolder = str(station_group)[1:-1] + '_' + str(user_number) + '_' + str(experiment_number) + '_' + datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S_%f") + '_' + str(random.randint(10000,99999))
     
@@ -58,7 +60,7 @@ def set_file_name():
         
     print(f"\n==========================\nExperiment-Ordner erstellt:\n{experiment_subfolder_path}\n==========================\n")
     
-    return experiment_subfolder, experiment_subfolder_path
+    return experiment_subfolder, experiment_subfolder_path, reward_config
 
 def calculate_moving_average(data, window_size=100):
     return np.convolve(data, np.ones(window_size)/window_size, mode='valid')
@@ -71,7 +73,7 @@ def save_rewards_list():
     print(f"Rewards-Liste gespeichert als '{file_destination}'")
 
 
-experiment_subfolder, experiment_subfolder_path = set_file_name()
+experiment_subfolder, experiment_subfolder_path, reward_config = set_file_name()
 
 # function to train the model
 
@@ -160,16 +162,19 @@ def main():
     # Rewards-Liste speichern
     save_rewards_list()
     
+    end_time = time.time()
+    elapsed_time = end_time - t
+    formatted_time = str(datetime.timedelta(seconds=elapsed_time))
     print("=========================================")
     print("Experiment name: " + experiment_name )
     print("Experiment subfolder: " + experiment_subfolder)
-    print("Total time taken: " + str(t))
+    print("Total time taken: " + formatted_time)
     print("=========================================")
     
     if (evaluate_after_train == "True"):
         print("\nstart evaluation")
         print("=========================================")
-        run(experiment_name, experiment_subfolder)
+        run(experiment_name, experiment_subfolder, reward_config)
     
 
 

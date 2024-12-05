@@ -15,15 +15,27 @@ from simulation.gym.sample_envs import DEMO_ENV_1
 from simulation.stats import print_statistics
 
 
+def get_station_group(file_path):
+    with open(file_path, 'r') as file:
+        data = json.load(file)
+        station_group = data['params']['station_group']
+        reward_config = data['params']['reward']
+        return station_group, reward_config
+
 def main():
     experiment_name = os.getenv("EXPERIMENT_NAME_2")
-    experiment_subfolder = os.getenv("EXPERIMENT_SUBFOLDER")    
+    experiment_subfolder = os.getenv("EXPERIMENT_SUBFOLDER")
+    system_path = os.getenv("SYSTEM_PATH")
     
-    run( experiment_name, experiment_subfolder)
+    experiment_path = os.path.join(system_path, 'experiments', experiment_name)
+    file_path = os.path.join(experiment_path, 'config.json')
+    station_group, reward_config = get_station_group(file_path) 
+    
+    run( experiment_name, experiment_subfolder, reward_config)
     
 
 
-def run( experiment_name, experiment_subfolder):
+def run( experiment_name, experiment_subfolder, reward_config):
 
     load_dotenv()
 
@@ -50,7 +62,7 @@ def run( experiment_name, experiment_subfolder):
     plugins = []
     if wandb:
         from simulation.plugins.wandb_plugin_env import WandBPlugin
-        run_name = experiment_subfolder
+        run_name = ("r" + str(reward_config) + experiment_subfolder)
         project_name= "projektseminarRL2024"
         plugins.append(WandBPlugin(project_name=project_name, run_name=run_name))
     env = DynamicSCFabSimulationEnvironment(**DEMO_ENV_1, **args, max_steps=1000000000, plugins=plugins, greedy_instance=None)
