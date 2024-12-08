@@ -186,6 +186,52 @@ class DynamicSCFabSimulationEnvironment(Env):
                 # save the reward for the current step
                 # save_reward_to_file(reward)
             
+            # Reward Funktion Max   
+            elif self.reward_type == 13:
+                #Flow-Faktor
+                part_1 = 0
+                if self.instance.current_time_days >= 100:
+                    for i in range(self.lots_done, len(self.instance.done_lots)):
+                        lot = self.instance.done_lots[i]
+                        if lot.done_at >= self.instance.current_time - (3600 * 24 * 30):
+                            CT = lot.done_at - lot.release_at
+                            RPT = lot.processing_time
+                            flow_factor =  CT/RPT
+                            part_1 -= (flow_factor)*lot.priority
+                #Buffer pro Schritt
+                part_2 = 0
+                for j in self.instance.active_lots:
+                    if j.actual_step.family not in self.station_group:
+                            continue
+                    else:
+                        part_2_1 = 0
+                        for route in self.stepbuffer:
+                            nummer_aus_part = ''.join(filter(str.isdigit, j.part_name))
+                            if nummer_aus_part in route:
+                                step_start = j.release_at+self.stepbuffer[route][j.name][j.actual_step.order][0]
+                                step_end = j.release_at+self.stepbuffer[route][j.name][j.actual_step.order][1]
+                                if self.instance.current_time <= step_end:
+                                    part_2_1 += 100
+                                if self.instance.current_time <= step_start:
+                                    part_2_1 += 100
+                                else:
+                                    part_2_1 -= min(50, (self.instance.current_time - step_end) / 3600)
+                                part_2_1 = part_2_1*j.priority/10
+                            else:
+                                continue
+                            part_2 += part_2_1
+                #Fertigstellung            
+                part_3 = 0
+                if self.instance.current_time_days >= 100:
+                    for i in range(self.lots_done, len(self.instance.done_lots)):
+                        lot = self.instance.done_lots[i]
+                        if lot.done_at >= self.instance.current_time - (3600 * 24 * 30):
+                            part_3 += 1000
+                            part_3 += 1000 if lot.deadline_at >= lot.done_at else -min(750, (
+                                    lot.done_at - lot.deadline_at) / 3600)
+                            part_3 = part_2 / lot.priority/5
+                reward = 1*part_1 + 1*part_2 + 0.5*part_3        
+                        
             # Reward Funktion Claire
             elif self.reward_type == 14:         # determines what reward structure is used
                  #Flow-Faktor
