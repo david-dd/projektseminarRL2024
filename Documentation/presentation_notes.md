@@ -15,4 +15,17 @@
 - conclusiion
     - is mashine lerning usable in semiconductor fabs 
     - evaluate the changes we made to the project 
-    
+
+
+# documentation 
+
+- changes to usability 
+    - Claire 
+- reward plots 
+    - Richard 
+- use of multiple toolgroups at the same time 
+    - Max, (Claire)
+- events 
+    - Simon, Karl, (Richard) 
+- reward funktions for eacht toolgroup 
+    - alle
