@@ -113,3 +113,46 @@ class BreakdownEvent:
             new_timestamp
         ))
         return time
+        
+class ToolGroupPartialFailureEvent:
+    def __init__(self, timestamp, tool_group, duration=7200):
+
+        self.timestamp = timestamp
+        self.tool_group = tool_group
+        self.duration = duration
+        self.failed_machines = []
+
+    def handle(self, instance):
+        group_machines = [m for m in instance.machines if m.group == self.tool_group]
+
+        if len(group_machines) == 0:
+            return
+
+        num_to_fail = len(group_machines) // 2
+        if num_to_fail == 0:
+            return
+
+        self.failed_machines = random.sample(group_machines, num_to_fail)
+
+        for machine in self.failed_machines:
+            instance.handle_breakdown(machine, self.duration)
+            if machine in instance.usable_machines:
+                instance.usable_machines.remove(machine)
+
+
+        recovery_time = self.timestamp + self.duration
+        instance.add_event(ToolGroupRecoveryEvent(recovery_time, self.failed_machines))
+
+
+class ToolGroupRecoveryEvent:
+    def __init__(self, timestamp, machines):
+        """
+        Restores machines after the partial failure downtime.
+        :param timestamp: Time at which recovery occurs
+        :param machines: The list of machines that were failed
+        """
+        self.timestamp = timestamp
+        self.machines = machines
+
+    def handle(self, instance):
+        instance.free_up_machines(self.machines)

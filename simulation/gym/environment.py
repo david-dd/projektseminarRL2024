@@ -43,6 +43,7 @@ from E import E
 from randomizer import Randomizer
 from read import read_all
 from sample_envs import DEMO_ENV_1
+from events import ToolGroupPartialFailureEvent  
 import datetime
 import copy
 
@@ -85,10 +86,18 @@ class DynamicSCFabSimulationEnvironment(Env):
         self.plugins = plugins
         self.stepbuffer={}  
         self.greedy_instance = copy.deepcopy(greedy_instance)
+        self.tool_group = os.getenv("TOOLGROUP")         
+        self.training_period = int(os.getenv("TRAINING_PERIOD", "630"))
+        self.event_half_group_failure = os.getenv("EVENT_HALF_GROUP_FAILURE", "False").strip().lower() == "true"
         self.reset()
         
         
         self.previous_setup = ''
+
+        if self.event_half_group_failure and self.tool_group is not None and self.tool_group != "":
+            half_period_days = self.training_period / 2
+            event_time_seconds = half_period_days * 24 * 3600
+            self.instance.add_event(ToolGroupPartialFailureEvent(event_time_seconds, self.tool_group))        
 
     def seed(self, seed=None):
         if seed is None:
