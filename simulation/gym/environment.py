@@ -14,6 +14,7 @@ use_system_path = os.getenv("USE_SYSTEM_PATH")
 
 if use_system_path == 'True':
     # uses the path in the env file
+    sys.path.append(os.path.join(system_path))
     sys.path.append(os.path.join(system_path, 'simulation'))
     sys.path.append(os.path.join(system_path, 'simulation', 'gym'))
 elif use_system_path == 'C':
@@ -65,7 +66,7 @@ class DynamicSCFabSimulationEnvironment(Env):
     def __init__(self, num_actions, active_station_group, days, dataset, dispatcher, seed, max_steps,
                  reward_type, action, state_components, greedy_instance,plugins=None, special_events_list: List[bool]= None ):
         self.did_reset = False
-        self.files = read_all('datasets/' + dataset)
+        self.files = read_all(os.path.join(system_path, 'datasets/' , dataset))
         self.instance = None
         self.num_actions = num_actions
         self.days = days
@@ -85,12 +86,16 @@ class DynamicSCFabSimulationEnvironment(Env):
         self.plugins = plugins
         self.stepbuffer={}  
         self.greedy_instance = copy.deepcopy(greedy_instance)
+        
+        self.previous_setup = ''
+        
+        self.special_events_list = special_events_list or False
         self.reset()
         
         
-        self.previous_setup = ''
+       
 
-        self.special_events_list = special_events_list or False
+        
 
     def seed(self, seed=None):
         if seed is None:
