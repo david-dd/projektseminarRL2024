@@ -133,7 +133,7 @@ def get_lots_to_dispatch_by_lot(instance, current_time, dispatcher):
     return min_run_break_machine, build_batch(lots[min_run_break_batch], lots[min_run_break_batch + 1:])
 
 
-def run_greedy(dataset, RL_days, greedy_days, dispatcher, seed, wandb, chart, alg='l4m'):
+def run_greedy(dataset, RL_days, greedy_days, dispatcher, seed, wandb, chart, alg='l4m',special_events_list: List[bool] =None ):
      
     sys.stderr.write('Loading ' + dataset + ' for ' + str(greedy_days) + ' days, using ' + dispatcher + '\n')
     sys.stderr.flush()
@@ -154,7 +154,7 @@ def run_greedy(dataset, RL_days, greedy_days, dispatcher, seed, wandb, chart, al
         from plugins.chart_plugin import ChartPlugin
         plugins.append(ChartPlugin())
     plugins.append(CostPlugin())
-    instance = FileInstance(files, run_to, l4m, plugins)
+    instance = FileInstance(files, run_to, l4m, plugins,special_events_list)
 
     dispatcher = dispatcher_map[dispatcher]
 

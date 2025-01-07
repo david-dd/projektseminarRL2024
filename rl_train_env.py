@@ -133,13 +133,26 @@ def main():
                 dispatcher=p['dispatcher'])
     args_eval= dict(num_actions=p['action_count'], active_station_group=p['station_group'], dataset='SMT2020_' + p['dataset'],
                 dispatcher=p['dispatcher'])
+    
+
+    #special_events_list: List[bool]
+    special_events_list =[]
+    #p = json.load(config)['params']
+    total_breakdowns = p['total_breakdowns'] == "True"
+    partial_breakdowns = p['partial_breakdowns'] == "True"
+    longer_breakdowns = p['longer_breakdowns'] == "True"
+
+    special_events_list.append(total_breakdowns)
+    special_events_list.append(partial_breakdowns)
+    special_events_list.append(longer_breakdowns)
+    
     print(f'Greedy ENV bis {greedy_days} Tage erstellt')
-    greedy_instance =run_greedy('SMT2020_' + p['dataset'],p['training_period'] , greedy_days, p['dispatcher'], 0, False, False, alg='l4m')
+    greedy_instance =run_greedy('SMT2020_' + p['dataset'],p['training_period'] , greedy_days, p['dispatcher'], 0, False, False, alg='l4m',special_events_list=special_events_list)
     print("Greedy Instance abgeschlossen")
     print("Args angenommen")
-    env = DynamicSCFabSimulationEnvironment(**DEMO_ENV_1, **args, seed=p['seed'], max_steps=10000000, reward_type=p['reward'],greedy_instance=greedy_instance, plugins=[] )
+    env = DynamicSCFabSimulationEnvironment(**DEMO_ENV_1, **args, seed=p['seed'], max_steps=10000000, reward_type=p['reward'],greedy_instance=greedy_instance, plugins=[],special_events_list=special_events_list )
     print("Env erstellt")
-    eval_env = DynamicSCFabSimulationEnvironment(**DEMO_ENV_1, **args_eval, days= 265, seed=777, max_steps=0, reward_type=p['reward'], greedy_instance=greedy_instance,plugins=[])
+    eval_env = DynamicSCFabSimulationEnvironment(**DEMO_ENV_1, **args_eval, days= 265, seed=777, max_steps=0, reward_type=p['reward'], greedy_instance=greedy_instance,plugins=[],special_events_list=special_events_list)
     print("Alles erstellt - ich lerne jz")
     model = PPO("MlpPolicy", env, verbose=1)
     

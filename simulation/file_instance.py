@@ -1,15 +1,20 @@
 from typing import Dict, List
-
+import os
 from classes import Machine, FileRoute, Lot
 from events import BreakdownEvent
 from instance import Instance
 from randomizer import Randomizer
 from tools import get_interval, get_distribution, UniformDistribution, date_time_parse
+from tools import ConstantDistribution,ExponentialDistribution
+
+import random as rnd
+from dotenv import load_dotenv
+load_dotenv()
 
 
 class FileInstance(Instance):
 
-    def __init__(self, files: Dict[str, List[Dict]], run_to, lot_for_machine, plugins):
+    def __init__(self, files: Dict[str, List[Dict]], run_to, lot_for_machine, plugins, special_events_list: List[bool] ):
         machines = []
         machine_id = 0
         r = Randomizer()
@@ -81,6 +86,9 @@ class FileInstance(Instance):
             pmcals[dc['PMCALNAME']] = (get_distribution('constant', dc['MTBPMUNITS'], dc['MTBPM']),
                                        get_distribution(dc['MTTRDIST'], dc['MTTRUNITS'], dc['MTTR'], dc['MTTR2']))
 
+
+
+        longer_breakdowns = special_events_list[2]
         breakdowns = []
         for a in files['attach.txt']:
             if a['RESTYPE'] == 'stngrp':
@@ -109,11 +117,76 @@ class FileInstance(Instance):
                     if a['FOADIST']=='constant':
                         dist_sample = (distribution.sample())/len(m_break)
                         spec_dist = dist_sample*(num+1)
-                        br = BreakdownEvent(spec_dist, le, ne, m, is_breakdown, spec_dist)
+                        #hier werden die längeren Breakdowns eingerichtet, wenn diese gewünscht wurden
+                        if longer_breakdowns and rnd.random() <= 0.25:
+                            #berechnung der längeren Breakdowns
+                            
+                            le_wert = le.p
+                            le_wert += rnd.randint(120,300)
+                            nle = ExponentialDistribution(le_wert)
+
+                            br = BreakdownEvent(spec_dist, nle, ne, m, is_breakdown, spec_dist)
+                        else:
+                            br = BreakdownEvent(spec_dist, le, ne, m, is_breakdown, spec_dist)
                     else:
-                        br = BreakdownEvent(distribution.sample(), le, ne, m, is_breakdown, 0)
+                        if longer_breakdowns  and rnd.random() <= 0.25:
+                        
+                            le_wert = le.p
+                            le_wert += rnd.randint(120,300)
+                            nle = ExponentialDistribution(le_wert)
+
+                            br = BreakdownEvent(distribution.sample(), nle, ne, m, is_breakdown, 0)
+                        else:
+                            br = BreakdownEvent(distribution.sample(), le, ne, m, is_breakdown, 0)
                     if not is_breakdown:
                         m.pms.append(br)
                     breakdowns.append(br)
+        #print(breakdowns)
+        #print('\n\n\n\n\n Jetzt kommen die Totalen Breakdowns\n')
+
+        total_breakdown = special_events_list[0]
+        if total_breakdown:
+            fixed_timestamp = 8640000 
+            fixed_rep_interval = ConstantDistribution(200000000)
+            fixed_length = ConstantDistribution(60*10)
+            for a in files['attach.txt']:
+                if a['RESTYPE'] == 'stngrp':
+                    m_break = [m for m in machines if m.group == a['RESNAME']]
+                else:
+                    m_break = [m for m in machines if m.family == a['RESNAME']]
+
+                if a['CALTYPE'] == 'down':
+                    is_breakdown = True
+                    _, le = downcals[a['CALNAME']]
+                else:
+                    continue
+            
+                for num, m in enumerate(m_break):
+                    br = BreakdownEvent(fixed_timestamp,fixed_length,fixed_rep_interval,m,is_breakdown,fixed_timestamp)
+                    breakdowns.append(br)
+
+
+        partial_breakdown = special_events_list[1]
+        if partial_breakdown:
+            #print("Partial-breakdown wurde getriggered")
+            fixed_timestamp = 8640000 * 2 
+            fixed_rep_interval = ConstantDistribution(200000000)
+            fixed_length = ConstantDistribution(1800)
+            for a in files['attach.txt']:
+                if a['RESTYPE'] == 'stngrp':
+                    m_break = [m for m in machines if m.group == a['RESNAME']]
+                else:
+                    m_break = [m for m in machines if m.family == a['RESNAME']]
+
+                if a['CALTYPE'] == 'down':
+                    is_breakdown = True
+                    _, le = downcals[a['CALNAME']]
+                else:
+                    continue
+            
+                for num, m in enumerate(m_break):
+                    if rnd.random > 0.5:
+                        br = BreakdownEvent(fixed_timestamp,fixed_length,fixed_rep_interval,m,is_breakdown,fixed_timestamp)
+                        breakdowns.append(br)     
 
         super().__init__(machines, routes, lots, setups, setup_min_run, breakdowns, lot_for_machine, plugins)

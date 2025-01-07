@@ -47,7 +47,7 @@ def run( experiment_name, experiment_subfolder, reward_config):
     experiment_path = os.path.join(system_path, 'experiments', experiment_name)
     experiment_subfolder_path = os.path.join(experiment_path, experiment_subfolder)
     
-    wandb = True 
+    wandb = False #True 
     t = datetime.datetime.now()
     ranag =  "trained.weights"
     
@@ -58,6 +58,18 @@ def run( experiment_name, experiment_subfolder, reward_config):
     args = dict(seed=0, num_actions=config['action_count'], active_station_group=config['station_group'], days=testing_days,
                 dataset='SMT2020_' + config['dataset'], dispatcher=config['dispatcher'], reward_type=config['reward'])
     
+    #special_events_list: List[bool]
+    special_events_list =[]
+    #p = json.load(config)['params']
+    total_breakdowns = config['total_breakdowns'] == "True"
+    partial_breakdowns = config['partial_breakdowns'] == "True"
+    longer_breakdowns = config['longer_breakdowns'] == "True"
+
+    special_events_list.append(total_breakdowns)
+    special_events_list.append(partial_breakdowns)
+    special_events_list.append(longer_breakdowns)
+
+
     
     plugins = []
     if wandb:
@@ -65,7 +77,7 @@ def run( experiment_name, experiment_subfolder, reward_config):
         run_name = ("r" + str(reward_config) + experiment_subfolder)
         project_name= "projektseminarRL2024"
         plugins.append(WandBPlugin(project_name=project_name, run_name=run_name))
-    env = DynamicSCFabSimulationEnvironment(**DEMO_ENV_1, **args, max_steps=1000000000, plugins=plugins, greedy_instance=None)
+    env = DynamicSCFabSimulationEnvironment(**DEMO_ENV_1, **args, max_steps=1000000000, plugins=plugins, greedy_instance=None, special_events_list=special_events_list)
     obs = env.reset()
     reward = 0
 

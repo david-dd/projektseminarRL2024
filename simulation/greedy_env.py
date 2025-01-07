@@ -10,6 +10,9 @@ system_path = os.getenv("SYSTEM_PATH")
 sys.path.append(os.path.join(system_path,'simulation'))
 sys.path.append(os.path.join(system_path))
 
+tb = os.getenv("TOTAL_BREAKDOWN")
+pb = os.getenv("PARTIAL_BREAKDOWN")
+lb = os.getenv("LONGER_BREAKDOWNS")
 
 from collections import defaultdict
 from datetime import datetime
@@ -169,7 +172,14 @@ def run_greedy():
         from plugins.chart_plugin import ChartPlugin
         plugins.append(ChartPlugin())
     plugins.append(CostPlugin())
-    instance = FileInstance(files, run_to, l4m, plugins)
+
+    special_event_list = []
+    special_event_list.append(tb)
+    special_event_list.append(pb)
+    special_event_list.append(lb)
+
+
+    instance = FileInstance(files, run_to, l4m, plugins,special_event_list)
 
     dispatcher = dispatcher_map[a.dispatcher]
 

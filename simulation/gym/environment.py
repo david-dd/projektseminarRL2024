@@ -63,7 +63,7 @@ STATE_COMPONENTS_DEMO = (
 class DynamicSCFabSimulationEnvironment(Env):
 
     def __init__(self, num_actions, active_station_group, days, dataset, dispatcher, seed, max_steps,
-                 reward_type, action, state_components, greedy_instance,plugins=None, ):
+                 reward_type, action, state_components, greedy_instance,plugins=None, special_events_list: List[bool]= None ):
         self.did_reset = False
         self.files = read_all('datasets/' + dataset)
         self.instance = None
@@ -89,6 +89,8 @@ class DynamicSCFabSimulationEnvironment(Env):
         
         
         self.previous_setup = ''
+
+        self.special_events_list = special_events_list or False
 
     def seed(self, seed=None):
         if seed is None:
@@ -508,7 +510,7 @@ class DynamicSCFabSimulationEnvironment(Env):
             else:
                 self.lots_done = 0
                 run_to = 3600 * 24 * self.days
-                self.instance = FileInstance(self.files, run_to, True, self.plugins)
+                self.instance = FileInstance(self.files, run_to, True, self.plugins, self.special_events_list)
             Randomizer().random.seed(self.seed_val)
             self.seed_val += 1
             self.step_buffer()
