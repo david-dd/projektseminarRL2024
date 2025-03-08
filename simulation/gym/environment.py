@@ -192,6 +192,62 @@ class DynamicSCFabSimulationEnvironment(Env):
                 
                 # save the reward for the current step
                 # save_reward_to_file(reward)
+                
+            # reward function Simon 
+            elif self.reward_type == 12: 
+                part_1 = 0
+                if self.instance.current_time_days >= 100:
+                    for i in range(self.lots_done, len(self.instance.done_lots)):
+                        lot = self.instance.done_lots[i]
+                        if lot.done_at >= self.instance.current_time - (3600 * 24 * 60):
+                            CT = lot.done_at - lot.release_at
+                            RPT = lot.processing_time
+                            flow_factor = CT / RPT
+                            part_1 -= (flow_factor-1)*lot.priority
+                # Erhöhte Gewichtung für zeitlichen Puffer
+                part_2 = 0
+                for j in self.instance.active_lots:
+                    if j.actual_step.family not in self.station_group:
+                        continue
+                    else:
+                        part_2_1 = 0
+                        for route in self.stepbuffer:
+                            nummer_aus_part = ''.join(filter(str.isdigit, j.part_name))
+                            if nummer_aus_part in route:
+                                step_start = j.release_at + self.stepbuffer[route][j.name][j.actual_step.order][0]
+                                step_end = j.release_at + self.stepbuffer[route][j.name][j.actual_step.order][1]
+                                if self.instance.current_time <= step_end:
+                                    part_2_1 += 200  
+                                if self.instance.current_time <= step_start:
+                                    part_2_1 += 200  
+                                else:
+                                    delay_penalty = min(100, (self.instance.current_time - step_end) / 1800)  
+                                    part_2_1 -= delay_penalty
+                                part_2_1 = part_2_1 * j.priority / 10
+                            else:
+                                continue
+                            part_2 += part_2_1
+
+                part_3 = 0
+                if self.instance.current_time_days >= 100:
+                    for i in range(self.lots_done, len(self.instance.done_lots)):
+                        lot = self.instance.done_lots[i]
+                        if lot.done_at >= self.instance.current_time - (3600 * 24 * 60):
+                            part_3 += 1000 if lot.deadline_at >= lot.done_at else -min(50, (
+                                    lot.done_at - lot.deadline_at) / 3600)
+                                                        # reward for finnishing a lot or penalty for finishing a lot after deadline 
+                            part_3 = part_2 / lot.priority/10               
+                part_4 = 0
+                for tool in self.instance.machines:
+                    if tool.group == 'Delay_32':
+                        continue
+                    elif tool.group == 'Diffusion' and len(tool.events) == 0 and len(tool.waiting_lots) >= 30:
+                        part_4 -= 10
+                    elif len(tool.events) == 0 and len(tool.waiting_lots) >= 6:
+                        part_4 -= 10
+
+                # Erhöhte Gewichtung des zeitlichen Puffers 
+                reward = 15*part_1 + 0.1*part_2 + 1*part_3 + 0.1*part_4
             
             # Reward Funktion Max   
             elif self.reward_type == 13:
